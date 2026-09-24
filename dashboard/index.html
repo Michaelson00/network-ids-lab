@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIDS Security Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .alert-table { width: 100%; margin-top: 20px; border-collapse: collapse; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .alert-table th, .alert-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NIDS Alerts Dashboard</h1>
+            <span id="system-status">API Status: Checking...</span>
+        </div>
+        <table class="alert-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Severity</th>
+                    <th>Risk Score</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-body">
+                <!-- Alerts will be injected here via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Check API Health
+        fetch('http://127.0.0.1:5000/api/health')
+            .then(res => res.json())
+            .then(data => { document.getElementById('system-status').innerText = `API Status: ${data.status}`; })
+            .catch(err => { document.getElementById('system-status').innerText = 'API Status: Offline'; });
+    </script>
+</body>
+</html>
