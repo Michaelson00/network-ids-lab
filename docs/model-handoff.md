@@ -44,3 +44,11 @@ SSH-Patator. Weaker performance on rare classes with very little training
 data: Bot (precision 0.29), Web Attack - XSS (~0.20), Web Attack - Brute
 Force (~0.6-0.7), and Infiltration (insufficient data in test set to
 evaluate reliably).
+
+## Hyperparameter tuning (Week 2)
+
+Tried increasing n_estimators to 200 and setting max_depth=30. Results were
+nearly identical to the original model — weak classes (Bot, Web Attack - XSS,
+Web Attack - Brute Force) did not improve. This suggests the limitation is
+insufficient training data for these rare classes, not a tuning issue.
+Sticking with the original model (random_forest_model.pkl).
