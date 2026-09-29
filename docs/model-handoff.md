@@ -52,3 +52,10 @@ nearly identical to the original model — weak classes (Bot, Web Attack - XSS,
 Web Attack - Brute Force) did not improve. This suggests the limitation is
 insufficient training data for these rare classes, not a tuning issue.
 Sticking with the original model (random_forest_model.pkl).
+
+## DA1 cross-check
+
+DA1 also ran a binary classification approach (ATTACK vs BENIGN) as a
+cross-check — 99.92% accuracy, 42 missed attacks, 53 false alarms.
+Feature importance broadly overlapped with the multiclass model above.
+See docs/da1-results/ for full outputs.
