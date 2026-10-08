@@ -76,6 +76,10 @@ def normalise_prediction_label(label):
 
     value = str(label).strip().lower()
 
+    # The detection pipeline also supplies already-normalised categories.
+    if value.upper() in ATTACK_IMPACT:
+        return value.upper()
+
     if value in {"benign", "normal"}:
         return "BENIGN"
 

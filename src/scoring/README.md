@@ -114,10 +114,10 @@ Example result:
 
 ```python
 {
-    "risk_score": 180,
+    "risk_score": 200,
     "severity": "Medium",
     "category": "PORT_SCAN",
-    "likelihood": 9,
+    "likelihood": 10,
     "impact": 4,
     "exposure": 5
 }
@@ -222,7 +222,25 @@ rule_matches
 Run the detection pipeline tests from the repository root:
 
 ```bash
-python -m unittest tests/test_detection_pipeline.py -v
+python3 -m unittest discover -s tests -v
 ```
 
 These tests verify that the scoring system works correctly with sample ML predictions and cybersecurity rule results.
+
+
+## Input and policy details
+
+Canonical categories such as `PORT_SCAN` and `BRUTE_FORCE` are also accepted.
+Unknown labels map to `OTHER_ATTACK`. Numeric factors use Python `round()`
+(ties to even), then clamp to 1–10. Supply finite numeric inputs; malformed
+values are not validated by these helpers.
+
+Confidence is clamped to 0–1 before conversion; non-benign predictions without
+confidence use likelihood 6. Benign predictions use likelihood 1. A rule match
+sets a minimum of 9, without reducing an existing likelihood of 10. Exposure
+defaults to 5. Direct benign scoring with a rule match uses impact 6 while
+retaining category `BENIGN`; the pipeline replaces the benign category first.
+
+Weights and severity thresholds are lab policy, not measured attack
+probabilities. The [final report](../../docs/final-report.md#security) documents
+rule precedence, threat assumptions, and unverified integration boundaries.
