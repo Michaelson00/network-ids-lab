@@ -63,6 +63,8 @@ class DetectionPipelineTests(unittest.TestCase):
             alert["rule_matches"]
         )
 
+        self.assertEqual(alert["risk_score"], 200)
+
         self.assertIn(
             alert["risk_level"],
             {"Medium", "High"}
@@ -123,6 +125,8 @@ class DetectionPipelineTests(unittest.TestCase):
             alert["risk_score"],
             0
         )
+
+        self.assertEqual(alert["risk_score"], 420)
 
 
 if __name__ == "__main__":
