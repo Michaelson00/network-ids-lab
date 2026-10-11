@@ -16,11 +16,11 @@ Network Traffic → Packet Capture / Dataset → Preprocessing → Feature Extra
 
 | Role | Person | Owns |
 |---|---|---|
-| Network Engineer | TBD | `lab/` |
-| Data Analyst 1 (Data Eng & EDA) | TBD | `notebooks/01_eda.ipynb`, `src/preprocessing/`, `src/features/` |
-| ML Engineer | TBD | `notebooks/02_model_comparison.ipynb`, `src/models/` |
-| Cybersecurity Engineer | TBD | `docs/threat-model.md`, `rules/`, `src/scoring/` |
-| DevOps / Software Engineer | TBD | `src/api/`, `dashboard/`, `Dockerfile`, `docker-compose.yml` |
+| Network Engineer | Benjamin | `lab/` |
+| Data Analyst 1 (Data Eng & EDA) | Serene | `notebooks/01_eda.ipynb`, `src/preprocessing/`, `src/features/` |
+| ML Engineer | Kelvin | `notebooks/02_model_comparison.ipynb`, `src/models/` |
+| Cybersecurity Engineer | Eugene | `docs/threat-model.md`, `rules/`, `src/scoring/` |
+| DevOps / Software Engineer | Bright | `src/api/`, `dashboard/`, `Dockerfile`, `docker-compose.yml` |
 
 ## Branching
 
