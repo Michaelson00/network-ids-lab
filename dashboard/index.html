@@ -41,6 +41,32 @@
             .then(res => res.json())
             .then(data => { document.getElementById('system-status').innerText = `API Status: ${data.status}`; })
             .catch(err => { document.getElementById('system-status').innerText = 'API Status: Offline'; });
+
+        // Fetch and display alerts dynamically
+        function loadAlerts() {
+            fetch('http://127.0.0.1:5000/api/alerts')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('alerts-body');
+                    tbody.innerHTML = ''; // Clear existing rows
+                    data.forEach(alert => {
+                        const row = `<tr>
+                            <td>${alert.id}</td>
+                            <td>${alert.title}</td>
+                            <td><span style="color: ${alert.severity === 'high' ? 'red' : 'orange'}">${alert.severity}</span></td>
+                            <td>${alert.risk_score}</td>
+                            <td>${alert.status}</td>
+                            <td>${alert.timestamp}</td>
+                        </tr>`;
+                        tbody.innerHTML += row;
+                    });
+                })
+                .catch(err => console.error("Error fetching alerts:", err));
+        }
+
+        // Load initially and refresh every 5 seconds
+        loadAlerts();
+        setInterval(loadAlerts, 5000);
     </script>
 </body>
 </html>
