@@ -5,6 +5,8 @@ Connect model predictions, deterministic security rules,
 and risk scoring.
 """
 
+import math
+
 from rules.detection_rules import (
     detect_brute_force,
     detect_dos_traffic,
@@ -130,7 +132,26 @@ def build_alert(
         Structured alert dictionary.
     """
 
-    event = event or {}
+    if event is None:
+        event = {}
+    if not isinstance(event, dict):
+        raise ValueError("event must be an object")
+    for count, window in (("connection_count", "connection_window_seconds"),
+                          ("failed_logins", "login_window_seconds"),
+                          ("request_count", "request_window_seconds")):
+        if (count in event) != (window in event):
+            raise ValueError(f"Supply both {count} and {window}")
+        for key in (count, window):
+            if key in event:
+                value = event[key]
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                    raise ValueError(f"{key} must be finite numeric data")
+                if value < 0 or (key == window and value == 0):
+                    raise ValueError(f"{key} is outside its valid range")
+    if isinstance(exposure, bool) or not isinstance(exposure, (int, float)) or not math.isfinite(exposure) or not 1 <= exposure <= 10:
+        raise ValueError("exposure must be between 1 and 10")
+    if confidence is not None and (isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not math.isfinite(confidence) or not 0 <= confidence <= 1):
+        raise ValueError("confidence must be between 0 and 1")
 
     rule_matches = _run_rules(event)
 
@@ -168,6 +189,7 @@ def build_alert(
 
     return {
         "label": predicted_label,
+        "confidence": confidence,
         "category": final_category,
         "risk_score": score["risk_score"],
         "risk_level": score["severity"],

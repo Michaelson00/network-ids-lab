@@ -1,5 +1,7 @@
 Machine Learning Section
 
+Evidence note: the following performance/tuning narrative is the model owner's historical report. The model notebook has no saved numeric evaluation outputs, and the selected model/scaler are absent. These observations were not reproduced by the final application audit. See [final issue audit](FINAL_ISSUE_AUDIT.md).
+
 Goal. Train a model that looks at one network flow and says whether it is normal traffic or a specific type of attack.
 
 Data. We used the cleaned CICIDS2017 dataset, which has about 2.8 million flows and 15 labels (normal traffic plus 14 attack types). Because of hardware limits, we trained on a random sample of 300,000 flows. We used 80% for training and 20% for testing, and kept the same mix of labels in both. All features were scaled before training.
@@ -16,4 +18,4 @@ Tuning Random Forest (200 trees, max depth 30) gave nearly the same results, so 
 
 Limits. Random Forest is weaker on rare attacks: Bot (precision 0.29), Web Attack XSS (about 0.20) and Web Attack Brute Force (about 0.6). Infiltration had only one test example, so we could not judge it. This is a data problem, because there are too few examples of these attacks for any model to learn well.
 
-Final model. Random Forest and its scaler are saved as files, and predict.py lets DevOps use them to label new traffic.
+Final model. The notebook contains code to save the paired Random Forest and scaler. Neither artifact is supplied in this checkout. `predict.py` can label new flows once trusted same-run artifacts are provided.

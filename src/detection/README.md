@@ -47,6 +47,7 @@ print(alert)
 ```python
 {
     "label": "PortScan",
+    "confidence": 0.96,
     "category": "PORT_SCAN",
     "risk_score": 200,
     "risk_level": "Medium",
@@ -126,7 +127,7 @@ tests/test_detection_pipeline.py
 Run the tests from the root of the repository:
 
 ```bash
-python -m unittest tests/test_detection_pipeline.py -v
+python -m unittest discover -s tests -p test_detection_pipeline.py -v
 ```
 
 The tests cover:
@@ -139,3 +140,6 @@ The tests cover:
 ## Purpose
 
 This module connects the cybersecurity rule layer with the ML prediction and risk-scoring components so that the system can produce a single structured alert for the API and dashboard.
+The pipeline validates supplied count/window pairs (nonnegative counts, positive
+windows), finite confidence 0–1 and exposure 1–10. Omitted pairs skip rules;
+incomplete pairs are errors. API integration and setup: [RUN_AND_TEST.md](../../RUN_AND_TEST.md).

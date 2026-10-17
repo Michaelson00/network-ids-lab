@@ -10,17 +10,12 @@ Both are saved using `joblib` and must be loaded with `joblib.load()`.
 ## How to use
 
 ```python
-import joblib
+from src.models.predict import predict, predict_traffic
 
-model = joblib.load("random_forest_model.pkl")
-scaler = joblib.load("scaler.pkl")
-
-# new_data must be a table with the same 78 feature columns,
-# in the same order, as the training data (all columns from the
-# original dataset except 'Label')
-
-new_data_scaled = scaler.transform(new_data)
-predictions = model.predict(new_data_scaled)
+# Run from the repository root; new_data has the 78 training feature columns.
+# Both functions validate/order named columns and apply the paired scaler.
+labels = predict(new_data)                  # ndarray of labels
+records = predict_traffic(new_data)          # list of {label, confidence}
 ```
 
 ## Important notes
@@ -59,3 +54,18 @@ DA1 also ran a binary classification approach (ATTACK vs BENIGN) as a
 cross-check — 99.92% accuracy, 42 missed attacks, 53 false alarms.
 Feature importance broadly overlapped with the multiclass model above.
 See docs/da1-results/ for full outputs.
+## Current evidence and integration boundary
+
+Both artifacts above are absent from this checkout. They must come from the
+same selected training run, with its Python/scikit-learn/numpy/joblib versions.
+`predict.py` uses `joblib.load` at module-relative paths, lazily; it checks
+78-feature counts and available feature names and fails explicitly if unavailable.
+The API calls `predict_traffic`, then `build_alert`; clients cannot supply labels.
+The model probability is taken from the predicted class's `predict_proba` column.
+
+The multiclass performance figures and tuning outcome above are the ML owner's
+reported historical observations. The model notebook has code but **no saved
+numeric evaluation outputs**, and these results have not been reproduced in this
+audit. Do not present the DA1 binary CSVs as multiclass verification. Temporary
+fixture model predictions pass the application tests; real-model sample/holdout
+predictions remain blocked. See [run guide](../RUN_AND_TEST.md).

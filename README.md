@@ -20,7 +20,7 @@ Network Traffic → Packet Capture / Dataset → Preprocessing → Feature Extra
 | Data Analyst 1 (Data Eng & EDA) | Serene | `notebooks/01_eda.ipynb`, `src/preprocessing/`, `src/features/` |
 | ML Engineer | Kelvin | `notebooks/02_model_comparison.ipynb`, `src/models/` |
 | Cybersecurity Engineer | Eugene | `docs/threat-model.md`, `rules/`, `src/scoring/` |
-| DevOps / Software Engineer | Bright | `src/api/`, `dashboard/`, `Dockerfile`, `docker-compose.yml` |
+| DevOps / Software Engineer | Bright | `src/api/`, `dashboard/` |
 
 ## Branching
 
@@ -51,6 +51,19 @@ merge. Only move stable, tested work from `dev` into `main`.
 
 ## Setup
 
+See [RUN_AND_TEST.md](RUN_AND_TEST.md) for complete setup, validation and demo steps.
+The selected model/scaler must be supplied by the ML owner. Raw PCAP-to-flow
+feature extraction is an external step, not an implemented capture service.
+
+Start API and dashboard together from the repository root:
+
+```sh
+python -m src.api.app
+```
+
+Open http://127.0.0.1:5000/.
+
+
 ```
 pip install -r requirements.txt
 ```
@@ -58,3 +71,10 @@ pip install -r requirements.txt
 ## Project Structure
 
 See each subfolder's README for details on that component.
+
+## Final audit
+
+See [Weeks 1–4 completion matrix](docs/FINAL_ISSUE_AUDIT.md) and
+[consolidated final report](docs/final-report.md). Completion percentages describe
+verified checklist evidence, not real-model readiness; missing artifacts and data
+remain explicit blockers.

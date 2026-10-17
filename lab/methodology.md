@@ -46,3 +46,9 @@ Each capture was analyzed to identify the traffic characteristic that distinguis
 - No scenario traffic ever left the isolated host-only subnet.
 - The DoS scenario was intentionally capped to roughly 10–15 seconds of runtime to avoid excessive load, even though the environment was fully isolated.
 - Internet connectivity was never active during any capture, only during unrelated software installation steps.
+
+## Artifact and verification boundary
+
+The committed DoS example is `scan_dos_trimmed.pcapng`; the full original is absent.
+See [lab README](README.md) for exact filenames and the external flow-export/auth-log handoff.
+VM isolation and scenario attribution are owner-reported, not revalidated by this audit.

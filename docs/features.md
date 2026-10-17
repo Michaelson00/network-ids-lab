@@ -2,7 +2,7 @@
 
 ## 1. Dataset
 
-This project uses the CIC-IDS-2017 intrusion detection dataset. The raw files are stored in `data/raw/` and cover network traffic captured across multiple days and attack scenarios.
+This project uses the CIC-IDS-2017 intrusion detection dataset. The raw files are expected in `data/raw/` (not supplied in this checkout) and cover network traffic captured across multiple days and attack scenarios.
 
 Each row represents a network flow. The dataset contains 78 candidate input features and a `Label` column identifying benign traffic or an attack category.
 
@@ -65,7 +65,7 @@ These figures are recorded in `docs/da1-results/week2_results_summary.csv` and `
 * Multiclass classification requires preserving the original attack-category labels.
 * Binary classification requires a clearly documented mapping from the original labels to benign and attack classes.
 * Training and inference must use consistent feature names, order, data types, and cleaning steps.
-* The repository's model documentation differs on whether scaling is required. Confirm the actual model and scaler artifacts before finalizing inference preprocessing.
+* The selected multiclass notebook trains on StandardScaler output. Inference uses the paired scaler; artifact loading still requires the missing model/scaler files.
 * The saved model and scaler files were not present in `src/models/` during the repository inspection, so the inference setup remains to be verified.
 
 ## 7. Reproducibility
@@ -76,3 +76,26 @@ These figures are recorded in `docs/da1-results/week2_results_summary.csv` and `
 * Analysis results: `docs/da1-results/`
 
 The notebook is the reference for the cleaning steps and recorded dataset shape. Any separate binary-classification experiment should document its own data selection, target creation, row counts, and evaluation results.
+
+## 8. Final feature decision and outstanding analysis
+
+The integrated multiclass model retains all **78** inputs, in
+[`src/features/schema.json`](../src/features/schema.json) order; a numbered copy
+is in [model-integration.md](model-integration.md). Do not remove redundant or
+low-importance columns from inference without a separately approved training run.
+The duplicate header variant `Fwd Header Length.1` is deliberately retained.
+
+The historical DA1 importance CSV assigns zero importance to several bulk/flag
+features, including `Fwd Avg Bytes/Bulk`, `Bwd Avg Bulk Rate`, and `CWE Flag Count`.
+This supports considering low-value features, but that CSV is from a separate
+experiment and does not establish the selected multiclass model's ranking.
+
+EDA now includes duplicate-row counting, constant-feature review, and sampled
+absolute Pearson correlations (50,000 rows, seed 42, threshold ≥0.95).
+Those new diagnostic cells have **not run**: raw/cleaned benchmark data is absent.
+No duplicate count, correlated pair, or resulting feature reduction is claimed.
+Existing cleaning and training choices are unchanged.
+
+Dataset source: [UNB Canadian Institute for Cybersecurity: CICIDS2017](https://www.unb.ca/cic/datasets/ids-2017.html).
+Use its MachineLearningCSV benchmark export for the existing notebook, not the
+lab captures. Record acquisition version/checksums when the data owner supplies it.
