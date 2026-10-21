@@ -1,11 +1,8 @@
-# Lab
-Isolated VM lab setup, topology, capture process — owned by Network Engineer.
-
 # Network Lab — Isolated Attack Simulation Environment
 
 ## Purpose
 
-This lab provides an isolated network environment for simulating normal and malicious network traffic in support of the team's Network Intrusion Detection System (NIDS) project. All traffic captures generated here are used by the Data Analyst and Cybersecurity Engineer to build detection rules and train the ML model.
+This lab provides an isolated network environment for simulating normal and malicious network traffic in support of the team's Network Intrusion Detection System (NIDS) project. The supplied captures document the lab scenarios. The selected ML model was trained on the separate CICIDS2017 benchmark; ingestion of these lab captures into training or inference is not evidenced.
 
 ## Machines
 
@@ -46,7 +43,7 @@ All captures were taken with **Wireshark** on `attacker-kali`, interface `eth0`,
 | `baseline_normal_traffic.pcapng` | Normal traffic | ICMP ping exchanges between attacker, target, and host — represents ordinary background activity with no attack behavior. |
 | `scan_nmap_synscan.pcapng` | Port scan | `nmap -sS 192.168.56.101` — SYN scan across 1000 ports from a single source in under a second. |
 | `scan_bruteforce_ssh.pcapng` | Brute-force | `hydra -l benjie-ubuntu -P rockyou.txt ssh://192.168.56.101` — repeated failed login attempts against a single port (22). |
-| `scan_dos.pcapng` | Denial of Service | `hping3 -S --flood -p 22 192.168.56.101` — high-rate SYN flood against a single port, run for ~10–15 seconds only. |
+| `scan_dos_trimmed.pcapng` | Denial of Service | `hping3 -S --flood -p 22 192.168.56.101` — high-rate SYN flood against a single port, run for ~10–15 seconds only. |
 
 ### Observed Indicators
 
@@ -69,3 +66,22 @@ All captures were taken with **Wireshark** on `attacker-kali`, interface `eth0`,
 4. Verify connectivity with `ping`.
 5. Install Wireshark (pre-installed on Kali) and capture on the interface showing the 192.168.56.x address.
 6. Run the scenarios listed above, saving each as a separate labeled `.pcapng` file.
+
+## DA1/ML handoff and repository policy
+
+The four files listed above exist under `lab/`. The DoS artifact is a trimmed
+capture; its full original is not present. Capture labels describe the owner's
+reported scenarios, not a new packet-level forensic verification. VM versions,
+connectivity and isolation are documented owner observations, not live checks.
+
+The selected model needs the 78 ordered CICIDS2017 flow columns in
+[`src/features/schema.json`](../src/features/schema.json), not raw PCAP bytes.
+Provide compatible externally exported flows plus aggregated per-source/service
+rule counters. SSH failed-login evidence requires authentication logs; encrypted
+SSH packets alone do not establish failed authentication counts.
+
+All four captures were already tracked before this audit (approximately
+21–226 KB each). `.gitignore` now excludes new packet captures, but does not
+untrack existing files. Existing payload privacy has not been certified; the
+network owner must review publication permission/sensitivity and decide whether
+to move existing captures to controlled storage. No captures were added or deleted.

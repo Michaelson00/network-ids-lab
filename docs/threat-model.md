@@ -55,3 +55,10 @@ When the detection layer identifies suspicious behavior, it will send a structur
 - **Recommended Analyst Action**
 
 **Dashboard Triage States:** Alerts will enter the dashboard in an "investigation required" state and can be updated to "triaged" once reviewed by a team member.
+
+## Implemented prototype boundary
+
+The API stores confidence, category and rule-match evidence with timestamp/status.
+A triage-update endpoint, packet evidence ingestion, and recommended-action engine
+are not implemented. These original design intentions are not demo claims.
+See [RUN_AND_TEST.md](../RUN_AND_TEST.md) for the implemented contract.

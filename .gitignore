@@ -35,3 +35,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local alert storage and packet captures
+*.db
+*.db-*
+*.sqlite*
+*.pcap
+*.pcapng
+.env.*

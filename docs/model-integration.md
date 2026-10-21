@@ -7,9 +7,9 @@ This document records the data and model requirements for integrating the traine
 ## Trained Model
 
 * Model: Random Forest Classifier
-* Model file: `notebooks/nids_random_forest.pkl`
+* Model file: `src/models/random_forest_model.pkl`
 * Number of input features: **78**
-* Scaling: **Not used**
+* Scaling: **StandardScaler required** (`src/models/scaler.pkl`)
 * Target columns: `Label` and `Attack_Type`
 * `Label` and `Attack_Type` must **not** be sent to the model as input features.
 
@@ -105,9 +105,9 @@ The model expects exactly these 78 features in this order:
 5. `Label` and `Attack_Type` must be excluded from the model input.
 6. Missing values must be handled before prediction.
 7. Infinite (`inf` or `-inf`) values must be handled before prediction.
-8. No feature scaling is required because the saved Random Forest model does not contain a scaler.
+8. Apply the paired fitted StandardScaler before prediction, as in `notebooks/02_model_comparison.ipynb`.
 9. The API/detection layer should validate the feature names and feature count before sending data to the model.
-10. The model contains `feature_names_in_`, so feature-name mismatches should be treated as an integration error.
+10. The scaler retains training feature names; the selected forest was fitted on scaled arrays. Check names where available and require 78 features for both artifacts.
 
 ## Data Cleaning Notes
 
@@ -147,3 +147,5 @@ Risk Scoring / Security Alert
 ```
 
 ## Important Note for API Integration
+
+The selected model is the scaled multiclass model in the ML notebook, not a separate binary DA1 experiment. Both artifacts are absent from this checkout. See [RUN_AND_TEST.md](../RUN_AND_TEST.md).

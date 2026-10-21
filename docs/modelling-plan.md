@@ -42,10 +42,14 @@ data is available:
 
 ## Output for DevOps
 
-Once the final model is selected, it will be saved as a single file using
+Once the final model is selected, it will be saved with its separate fitted scaler using
 `joblib`, so it can be loaded and used for predictions without retraining.
 
 Alongside the saved model, a short note will document:
 - The exact features (and order) the model expects as input
 - Any preprocessing/encoding applied before training, so the same steps can
   be applied to new data before prediction
+
+Current implementation uses class weighting, not SMOTE. The selected notebook saves
+`src/models/random_forest_model.pkl` plus `src/models/scaler.pkl`; artifacts and
+training package-version provenance remain an ML-owner handoff.

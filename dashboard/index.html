@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NIDS | Threat Monitor</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
 
         :root {
             --bg-color: #0a0a0a;
@@ -64,6 +64,8 @@
         .status-healthy { color: var(--alert-low); border-color: var(--alert-low); }
         .status-offline { color: var(--alert-high); border-color: var(--alert-high); }
 
+        .table-wrap { overflow-x: auto; }
+        .header { flex-wrap: wrap; gap: 16px; }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -108,77 +110,76 @@
             <div id="system-status" class="status-badge">Checking API...</div>
         </div>
         
-        <table>
+        <p id="metrics" aria-live="polite">Loading alert counts...</p>
+        <div class="table-wrap"><table>
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Threat Title</th>
                     <th>Severity</th>
                     <th>Risk Score</th>
+                    <th>Source</th>
                     <th>Status</th>
                     <th>Timestamp</th>
                 </tr>
             </thead>
             <tbody id="alerts-body">
                 <tr>
-                    <td colspan="6" class="empty-state">Waiting for traffic data...</td>
+                    <td colspan="7" class="empty-state">Waiting for traffic data...</td>
                 </tr>
             </tbody>
-        </table>
+        </table></div>
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:5000/api';
-
-        // Check API Health
-        function checkHealth() {
-            const statusBadge = document.getElementById('system-status');
-            fetch(`${API_URL}/health`)
-                .then(res => res.json())
-                .then(data => {
-                    statusBadge.innerText = 'System Online';
-                    statusBadge.className = 'status-badge status-healthy';
-                })
-                .catch(err => {
-                    statusBadge.innerText = 'API Offline';
-                    statusBadge.className = 'status-badge status-offline';
-                });
+        const API_URL = '/api';
+        async function get(path) {
+            const response = await fetch(`${API_URL}/${path}`, {signal: AbortSignal.timeout(8000)});
+            if (!response.ok) throw new Error(`API HTTP ${response.status}`);
+            return response.json();
         }
-
-        // Fetch and display alerts dynamically
-        function loadAlerts() {
-            fetch(`${API_URL}/alerts`)
-                .then(res => res.json())
-                .then(data => {
-                    const tbody = document.getElementById('alerts-body');
-                    if (data.length === 0) return; // Keep empty state if no alerts
-                    
-                    tbody.innerHTML = ''; // Clear rows
-                    data.forEach(alert => {
-                        // Assign color class based on severity string
-                        let sevClass = 'severity-low';
-                        if (alert.severity && alert.severity.toLowerCase() === 'high') sevClass = 'severity-high';
-                        if (alert.severity && alert.severity.toLowerCase() === 'medium') sevClass = 'severity-medium';
-
-                        const row = `<tr>
-                            <td>#${alert.id}</td>
-                            <td><strong>${alert.title}</strong></td>
-                            <td class="${sevClass}">${alert.severity.toUpperCase()}</td>
-                            <td>${alert.risk_score}</td>
-                            <td style="text-transform: capitalize;">${alert.status}</td>
-                            <td style="color: #a3a3a3;">${alert.timestamp}</td>
-                        </tr>`;
-                        tbody.innerHTML += row;
+        async function checkHealth() {
+            const badge = document.getElementById('system-status');
+            try {
+                const data = await get('health');
+                badge.textContent = data.status === 'healthy' ? 'System Online' : 'Model unavailable';
+                badge.className = 'status-badge ' + (data.status === 'healthy' ? 'status-healthy' : 'status-offline');
+                badge.title = data.model.error || '';
+            } catch (error) {
+                badge.textContent = 'API Offline';
+                badge.className = 'status-badge status-offline';
+            }
+        }
+        async function loadAlerts() {
+            const tbody = document.getElementById('alerts-body');
+            try {
+                const [alerts, metrics] = await Promise.all([get('alerts'), get('metrics')]);
+                document.getElementById('metrics').textContent = `Stored attack alerts: ${metrics.total_alerts} | ` +
+                    Object.entries(metrics.by_category).map(([name, count]) => `${name}: ${count}`).join(' | ');
+                tbody.replaceChildren();
+                if (!alerts.length) {
+                    const cell = tbody.insertRow().insertCell();
+                    cell.colSpan = 7; cell.className = 'empty-state'; cell.textContent = 'No attack alerts stored.';
+                }
+                for (const alert of alerts) {
+                    const row = tbody.insertRow();
+                    const values = [alert.id, alert.category || alert.title, alert.severity || 'Unknown',
+                        alert.risk_score, alert.detection_source || alert.source || 'Unknown', alert.status, alert.timestamp];
+                    values.forEach((value, index) => {
+                        const cell = row.insertCell();
+                        cell.textContent = value ?? 'Unavailable';
+                        if (index === 2 && ['Low', 'Medium', 'High'].includes(value)) cell.className = `severity-${value.toLowerCase()}`;
                     });
-                })
-                .catch(err => console.error("Error fetching alerts:", err));
+                    row.title = JSON.stringify(alert.rule_matches);
+                }
+            } catch (error) {
+                document.getElementById('metrics').textContent = 'Alert data unavailable; check API connection.';
+                tbody.replaceChildren();
+            }
         }
-
-        // Initialize and set polling intervals
-        checkHealth();
-        loadAlerts();
-        setInterval(checkHealth, 10000); // Check health every 10s
-        setInterval(loadAlerts, 5000);   // Fetch alerts every 5s
+        checkHealth(); loadAlerts();
+        setInterval(checkHealth, 10000);
+        setInterval(loadAlerts, 5000);
     </script>
 </body>
 </html>
