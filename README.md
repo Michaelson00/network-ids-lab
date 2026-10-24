@@ -1,4 +1,4 @@
-# Network IDS Lab
+# SentinelNIDS / Network IDS Lab
 
 A small Network Intrusion Detection System (NIDS) built as a 4-week collaborative
 mock project. Network traffic is captured, cleaned, classified, risk-scored, and
@@ -49,24 +49,25 @@ Open a Pull Request from your feature branch into `dev`. Explain what changed,
 why, and how it was tested. Get one review, fix requested changes, get approval,
 merge. Only move stable, tested work from `dev` into `main`.
 
-## Setup
-
-See [RUN_AND_TEST.md](RUN_AND_TEST.md) for complete setup, validation and demo steps.
-The selected model/scaler must be supplied by the ML owner. Raw PCAP-to-flow
-feature extraction is an external step, not an implemented capture service.
-
-Start API and dashboard together from the repository root:
+## Setup and first detection
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 python -m src.api.app
 ```
 
-Open http://127.0.0.1:5000/.
+Open http://127.0.0.1:5000/, then click **Detection demo → Port scan**.
+It processes validated simulated features through benchmark ML when available,
+otherwise transparent rules-only DEMO MODE, then risk/storage and the dashboard. No packets or network attacks are generated.
+The selected CICIDS2017 model/scaler are still an external ML-owner handoff;
+the demo never replaces them or claims benchmark accuracy. Existing lab captures
+can now be read offline through packet-header rules (not invented ML features).
 
-
-```
-pip install -r requirements.txt
-```
+[RUN_AND_TEST.md](RUN_AND_TEST.md) covers four demos, manual flow submission,
+readiness, analytics, safe demo-only reset and tests. Raw PCAP-to-flow export
+remains external; no automatic network monitoring is implemented.
 
 ## Project Structure
 
@@ -78,3 +79,12 @@ See [Weeks 1–4 completion matrix](docs/FINAL_ISSUE_AUDIT.md) and
 [consolidated final report](docs/final-report.md). Completion percentages describe
 verified checklist evidence, not real-model readiness; missing artifacts and data
 remain explicit blockers.
+
+## Functional implementation
+
+See [current input-path and verification notes](docs/FUNCTIONAL_IMPLEMENTATION.md).
+Dashboard icons are official locally bundled Lucide SVGs; charts use Chart.js.
+Licenses are preserved under `dashboard/vendor/`.
+
+Current mode and role handoffs: [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md) and
+[MISSING_ARTIFACTS.md](docs/MISSING_ARTIFACTS.md).

@@ -1,5 +1,11 @@
 # SentinelNIDS / Network IDS Lab — Final Report
 
+Update 2026-10-24: [functional implementation](FUNCTIONAL_IMPLEMENTATION.md) adds
+an explicitly synthetic demo model/input path and a verified interactive dashboard.
+The dated audit/report below remains historical evidence; the selected benchmark
+artifacts and experimental data are still missing. Demo validation does not
+resolve selected-model evaluation or packet-to-flow handoffs.
+
 Educational prototype. This report separates repository evidence, owner-reported
 historical observations, and checks run during the final audit. Completion is
 tracked in [FINAL_ISSUE_AUDIT.md](FINAL_ISSUE_AUDIT.md).

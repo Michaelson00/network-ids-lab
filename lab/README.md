@@ -85,3 +85,11 @@ All four captures were already tracked before this audit (approximately
 untrack existing files. Existing payload privacy has not been certified; the
 network owner must review publication permission/sensitivity and decide whether
 to move existing captures to controlled storage. No captures were added or deleted.
+
+## Supported offline analysis
+
+Use `python -m src.demo capture scan_nmap_synscan.pcapng` while the API is
+running, or the dashboard Offline capture analysis control. The reader extracts
+actual distinct SYN ports and per-service SYN volume and runs existing rules,
+risk and storage. It does not send/replay packets, infer encrypted SSH login
+failures or fabricate benchmark ML features. [Exact results and limits](../RUN_AND_TEST.md#5-offline-pcap-mode--actual-supplied-captures).
