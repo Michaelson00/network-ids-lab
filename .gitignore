@@ -43,3 +43,6 @@ Thumbs.db
 *.pcap
 *.pcapng
 .env.*
+
+# Separate synthetic demo artifacts
+data/demo/

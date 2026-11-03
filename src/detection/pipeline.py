@@ -155,9 +155,8 @@ def build_alert(
 
     rule_matches = _run_rules(event)
 
-    ml_category = normalise_prediction_label(
-        predicted_label
-    )
+    ml_available = predicted_label is not None
+    ml_category = normalise_prediction_label(predicted_label) if ml_available else "BENIGN"
 
     matched_category = _rule_category(
         rule_matches
@@ -178,7 +177,10 @@ def build_alert(
     )
 
     # Determine where the detection came from.
-    if rule_matches and ml_category != "BENIGN":
+    if not ml_available:
+        source = "rule"
+
+    elif rule_matches and ml_category != "BENIGN":
         source = "both"
 
     elif rule_matches:
@@ -195,4 +197,5 @@ def build_alert(
         "risk_level": score["severity"],
         "detection_source": source,
         "rule_matches": rule_matches,
+        "risk_factors": {key: score[key] for key in ("likelihood", "impact", "exposure")},
     }

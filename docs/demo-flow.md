@@ -1,13 +1,16 @@
-# Final demo flow
+# Final presentation flow
 
-Follow [RUN_AND_TEST.md](../RUN_AND_TEST.md#n-final-demo-procedure).
+1. From the root, install dependencies and start `python -m src.api.app`.
+2. Open http://127.0.0.1:5000/; distinguish selected versus synthetic model status.
+3. Show empty state; click **Benign traffic** and explain low risk/no attack row.
+4. Click **Port scan**; show the actual synthetic-model verdict and risk 200.
+5. Inspect stored rule evidence/features and Likelihood × Impact × Exposure.
+6. Show KPI/category/severity/source/activity charts update from SQLite.
+7. Run **Brute force** (risk 420) and **DoS** (risk 720), or use CLI equivalents.
+8. Filter recent alerts, select Demo scope, and open alert details.
+9. Explain this synthetic demonstrator does not measure benchmark quality, analyze
+   PCAPs or run live attacks; selected artifacts remain missing.
+10. Confirm **Clear demo alerts** removes only simulated rows, then stop with Ctrl+C.
 
-Show the existing dashboard, healthy model/storage, a known benign holdout flow,
-then controlled port-scan, brute-force and DoS metadata requests. Explain ML,
-rule evidence and the existing Likelihood × Impact × Exposure formula.
-Benign risk is low, not zero. Attack results are persisted and appear after
-the next dashboard poll. Historical evaluation figures are not a fresh benchmark.
-
-Do not claim live PCAP ingestion or automatic authentication-log extraction;
-those adapters are not present. The selected model/scaler must be supplied
-before a real-model demonstration. Automated tests use temporary fixtures.
+See [RUN_AND_TEST.md](../RUN_AND_TEST.md#13-final-presentation--demo-procedure).
+Do not claim historical multiclass metrics were reproduced by synthetic examples.

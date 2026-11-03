@@ -1,185 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIDS | Threat Monitor</title>
-    <style>
-
-
-        :root {
-            --bg-color: #0a0a0a;
-            --surface: #171717;
-            --border: #262626;
-            --text-main: #f5f5f5;
-            --text-muted: #a3a3a3;
-            --alert-high: #ef4444;
-            --alert-med: #f59e0b;
-            --alert-low: #10b981;
-        }
-
-        body {
-            font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.05em;
-            text-transform: uppercase;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        .status-healthy { color: var(--alert-low); border-color: var(--alert-low); }
-        .status-offline { color: var(--alert-high); border-color: var(--alert-high); }
-
-        .table-wrap { overflow-x: auto; }
-        .header { flex-wrap: wrap; gap: 16px; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--surface);
-            border: 1px solid var(--border);
-        }
-
-        th, td {
-            padding: 16px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        td {
-            font-size: 0.95rem;
-        }
-
-        .severity-high { color: var(--alert-high); font-weight: 700; }
-        .severity-medium { color: var(--alert-med); font-weight: 700; }
-        .severity-low { color: var(--alert-low); font-weight: 700; }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>SentinelNIDS · Security overview</title>
+  <link rel="icon" href="/assets/vendor/shield-check.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script>const API_URL = '/api';</script>
+  <script defer src="/assets/vendor/chart.umd.min.js"></script>
+  <script defer src="/assets/app.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>NIDS Alerts</h1>
-            <div id="system-status" class="status-badge">Checking API...</div>
-        </div>
-        
-        <p id="metrics" aria-live="polite">Loading alert counts...</p>
-        <div class="table-wrap"><table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Threat Title</th>
-                    <th>Severity</th>
-                    <th>Risk Score</th>
-                    <th>Source</th>
-                    <th>Status</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
-            <tbody id="alerts-body">
-                <tr>
-                    <td colspan="7" class="empty-state">Waiting for traffic data...</td>
-                </tr>
-            </tbody>
-        </table></div>
+<a class="skip-link" href="#main">Skip to dashboard</a>
+<aside class="sidebar">
+  <a class="brand" href="#overview"><span class="brand-icon"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#shield-check"></use></svg></span><span>Sentinel<span class="brand-light">NIDS</span><small>NETWORK SECURITY LAB</small></span></a>
+  <p class="nav-label">WORKSPACE</p>
+  <nav aria-label="Main navigation">
+    <a href="#overview"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#activity"></use></svg>Overview</a>
+    <a href="#simulation"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#play"></use></svg>Detection demo<span class="mini-label">LAB</span></a>
+    <a href="#alerts"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#radar"></use></svg>Security alerts</a>
+    <a href="#engine"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#brain-circuit"></use></svg>Detection engine</a>
+  </nav>
+  <div class="sidebar-note"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#shield-check"></use></svg><strong>Isolated. Educational.</strong><p>Offline captures and simulated events. No live packet capture or attack traffic is generated.</p><span class="version">LOCAL PROTOTYPE / v1</span></div>
+</aside>
+<main id="main">
+  <header class="topbar"><span><span class="dot"></span>Local lab environment</span><div><span id="updated">Waiting for API</span><button id="refresh" class="icon-button" title="Refresh dashboard" aria-label="Refresh dashboard"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#refresh-cw"></use></svg></button></div></header>
+  <section id="overview">
+    <div class="page-heading"><div><p class="eyebrow">THREAT MONITORING</p><h1>Security overview</h1><p class="muted">From flow features to actionable evidence. Your lab, at a glance.</p></div><label class="scope-label">Data scope<select id="scope"><option value="all">All stored alerts</option><option value="demo">Demo / Simulated only</option><option value="observed">Submitted / Legacy only</option></select></label></div>
+    <div id="operating-mode" class="notice mode-notice" role="status"><strong id="mode-title">Checking operating mode</strong><p id="mode-message">Verifying benchmark ML availability.</p></div>
+    <div id="api-error" class="notice error" role="alert" hidden></div>
+    <div class="kpis" aria-label="Stored alert overview">
+      <article class="kpi"><span class="kpi-label">Total alerts<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#radar"></use></svg></span><strong id="kpi-total">—</strong><small id="kpi-scope">Loading stored records</small></article>
+      <article class="kpi"><span class="kpi-label">High risk<span class="severity-dot high"></span></span><strong id="kpi-high">—</strong><small>Risk score 501–1,000</small></article>
+      <article class="kpi"><span class="kpi-label">Medium risk<span class="severity-dot medium"></span></span><strong id="kpi-medium">—</strong><small>Risk score 126–500</small></article>
+      <article class="kpi"><span class="kpi-label">Low risk<span class="severity-dot low"></span></span><strong id="kpi-low">—</strong><small>Risk score 1–125</small></article>
+      <article class="kpi"><span class="kpi-label">Untriaged<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#clock"></use></svg></span><strong id="kpi-active">—</strong><small>Investigation required</small></article>
     </div>
-
-    <script>
-        const API_URL = '/api';
-        async function get(path) {
-            const response = await fetch(`${API_URL}/${path}`, {signal: AbortSignal.timeout(8000)});
-            if (!response.ok) throw new Error(`API HTTP ${response.status}`);
-            return response.json();
-        }
-        async function checkHealth() {
-            const badge = document.getElementById('system-status');
-            try {
-                const data = await get('health');
-                badge.textContent = data.status === 'healthy' ? 'System Online' : 'Model unavailable';
-                badge.className = 'status-badge ' + (data.status === 'healthy' ? 'status-healthy' : 'status-offline');
-                badge.title = data.model.error || '';
-            } catch (error) {
-                badge.textContent = 'API Offline';
-                badge.className = 'status-badge status-offline';
-            }
-        }
-        async function loadAlerts() {
-            const tbody = document.getElementById('alerts-body');
-            try {
-                const [alerts, metrics] = await Promise.all([get('alerts'), get('metrics')]);
-                document.getElementById('metrics').textContent = `Stored attack alerts: ${metrics.total_alerts} | ` +
-                    Object.entries(metrics.by_category).map(([name, count]) => `${name}: ${count}`).join(' | ');
-                tbody.replaceChildren();
-                if (!alerts.length) {
-                    const cell = tbody.insertRow().insertCell();
-                    cell.colSpan = 7; cell.className = 'empty-state'; cell.textContent = 'No attack alerts stored.';
-                }
-                for (const alert of alerts) {
-                    const row = tbody.insertRow();
-                    const values = [alert.id, alert.category || alert.title, alert.severity || 'Unknown',
-                        alert.risk_score, alert.detection_source || alert.source || 'Unknown', alert.status, alert.timestamp];
-                    values.forEach((value, index) => {
-                        const cell = row.insertCell();
-                        cell.textContent = value ?? 'Unavailable';
-                        if (index === 2 && ['Low', 'Medium', 'High'].includes(value)) cell.className = `severity-${value.toLowerCase()}`;
-                    });
-                    row.title = JSON.stringify(alert.rule_matches);
-                }
-            } catch (error) {
-                document.getElementById('metrics').textContent = 'Alert data unavailable; check API connection.';
-                tbody.replaceChildren();
-            }
-        }
-        checkHealth(); loadAlerts();
-        setInterval(checkHealth, 10000);
-        setInterval(loadAlerts, 5000);
-    </script>
+    <div class="analytics">
+      <article class="panel timeline-panel"><div class="panel-heading"><div><h2>Alert activity</h2><p>Hourly alert count &amp; average risk · last 24 hours, UTC</p></div><span class="tag">DATABASE</span></div><div class="chart"><canvas id="timeline-chart" role="img" aria-label="Hourly stored alert count and average risk"></canvas><p id="timeline-empty" class="chart-empty">No alerts in the last 24 hours.</p></div><p id="timeline-summary" class="sr-only"></p></article>
+      <article class="panel"><div class="panel-heading"><div><h2>Severity breakdown</h2><p>All stored alerts in the selected scope</p></div></div><div class="chart"><canvas id="severity-chart" role="img" aria-label="Alert counts by severity"></canvas><p id="severity-empty" class="chart-empty">No severity data yet.</p></div><p id="severity-summary" class="chart-summary"></p></article>
+      <article class="panel"><div class="panel-heading"><div><h2>Attack categories</h2><p>Benign results are not stored as alerts</p></div></div><div class="chart compact"><canvas id="category-chart" role="img" aria-label="Stored alerts by normalized attack category"></canvas><p id="category-empty" class="chart-empty">Run a simulation to see categories.</p></div><p id="category-summary" class="sr-only"></p></article>
+      <article class="panel"><div class="panel-heading"><div><h2>Detection source</h2><p>How each stored alert was identified</p></div></div><div class="chart compact"><canvas id="source-chart" role="img" aria-label="Stored alerts identified by ML, rule, or both"></canvas><p id="source-empty" class="chart-empty">No detection evidence yet.</p></div><p id="source-summary" class="chart-summary"></p></article>
+    </div>
+  </section>
+  <section id="simulation" class="panel demo-panel">
+    <div class="panel-heading"><div><p class="eyebrow">SAFE, REPRODUCIBLE INPUT</p><h2>Detection demo</h2><p>Run simulated features through available detection, security rules, risk scoring and storage.</p></div><span class="tag demo-tag">DEMO / SIMULATED</span></div>
+    <p class="demo-explanation">Uses benchmark ML when installed. If unavailable, DEMO MODE runs the existing rules and risk scoring with no invented ML labels or probabilities. All generated events remain labelled Demo / Simulated.</p>
+    <div class="scenario-buttons">
+      <button class="scenario" data-scenario="benign"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#shield-check"></use></svg><span><strong>Benign traffic</strong><small>Establish a normal baseline</small></span><svg class="icon arrow" aria-hidden="true"><use href="/assets/vendor/lucide.svg#chevron-right"></use></svg></button>
+      <button class="scenario" data-scenario="port_scan"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#scan-line"></use></svg><span><strong>Port scan</strong><small>35 connections within 8 seconds</small></span><svg class="icon arrow" aria-hidden="true"><use href="/assets/vendor/lucide.svg#chevron-right"></use></svg></button>
+      <button class="scenario" data-scenario="brute_force"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#key-round"></use></svg><span><strong>Brute force</strong><small>7 simulated failed logins</small></span><svg class="icon arrow" aria-hidden="true"><use href="/assets/vendor/lucide.svg#chevron-right"></use></svg></button>
+      <button class="scenario" data-scenario="dos"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#zap"></use></svg><span><strong>Denial of service</strong><small>1,500 requests within 1 second</small></span><svg class="icon arrow" aria-hidden="true"><use href="/assets/vendor/lucide.svg#chevron-right"></use></svg></button>
+    </div>
+    <div id="demo-result" class="demo-result" role="status" aria-live="polite">Choose a scenario. Benign traffic returns a low-risk verdict without creating an attack alert.</div>
+    <div id="pipeline" class="pipeline" aria-label="Detection processing stages"><span>Flow features</span><span>Validation</span><span>ML when installed</span><span>Rules</span><span>Risk</span><span>Alert + storage</span></div>
+  </section>
+  <section id="captures" class="panel capture-panel">
+    <div class="panel-heading"><div><p class="eyebrow">EXISTING AUTHORISED LAB FILES</p><h2>Offline capture analysis</h2><p>Read stored PCAP/PCAPNG headers. No live capture, replay or packet sending.</p></div><span class="tag">RULES ONLY</span></div>
+    <p class="demo-explanation">Extracts distinct SYN destination ports and per-service SYN volume. This is not a CICFlowMeter ML feature exporter. Encrypted SSH cannot establish failed-login counts.</p>
+    <div class="capture-controls"><label>Lab capture<select id="capture-file" aria-label="Lab capture"><option value="">Loading captures…</option></select></label><button id="process-capture" class="button"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#play"></use></svg>Process offline capture</button></div>
+    <div id="capture-result" class="demo-result" role="status" aria-live="polite">Choose a file to analyze actual packet-header observations through rules, risk scoring and storage.</div>
+  </section>
+  <section id="alerts" class="panel alerts-panel">
+    <div class="panel-heading"><div><h2>Recent security alerts <span id="shown-count" class="count-tag">—</span></h2><p>Latest 50 matching records · timestamps in your local time</p></div><button id="reset-demo" class="button subtle"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#rotate-ccw"></use></svg>Clear demo alerts</button></div>
+    <div class="filters"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#filter"></use></svg><label>Severity<select id="filter-severity"><option value="">All severities</option><option>High</option><option>Medium</option><option>Low</option></select></label><label>Category<select id="filter-category"><option value="">All categories</option><option value="PORT_SCAN">Port scan</option><option value="BRUTE_FORCE">Brute force</option><option value="DOS">DoS</option><option value="OTHER_ATTACK">Other attack</option></select></label><label>Source<select id="filter-source"><option value="">All sources</option><option value="ml">ML</option><option value="rule">Rule</option><option value="both">Both</option></select></label><p>Filters apply to this table.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Time</th><th>Attack / category</th><th>Severity</th><th>Risk score</th><th>Detection</th><th>Status</th><th><span class="sr-only">Details</span></th></tr></thead><tbody id="alerts-body"><tr><td colspan="7" class="empty-state">Connecting to the API…</td></tr></tbody></table></div>
+    <div id="empty-state" class="empty-state" hidden><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#radar"></use></svg><h3>No alerts detected yet</h3><p>Run a demo scenario or submit flow features to begin. This prototype processes submitted features; it does not monitor your network automatically.</p><a class="button" href="#simulation">Run a detection demo<svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#play"></use></svg></a></div>
+  </section>
+  <section id="engine" class="engine-grid">
+    <article class="panel"><div class="panel-heading"><div><h2>System status</h2><p>Verified by API readiness checks</p></div><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#server"></use></svg></div><dl class="status-list"><div><dt>API</dt><dd id="status-api">Checking</dd></div><div><dt>Rules engine</dt><dd id="status-engine">Checking</dd></div><div><dt>Risk engine</dt><dd id="status-risk">Checking</dd></div><div><dt>Mode</dt><dd id="status-mode">Checking</dd></div><div><dt>Selected ML model</dt><dd id="status-model">Checking</dd></div><div><dt>Optional synthetic fixture</dt><dd id="status-demo">Checking</dd></div><div><dt>SQLite database</dt><dd id="status-database">Checking</dd></div></dl><p id="model-note" class="muted small"></p></article>
+    <article class="panel transparency"><div class="panel-heading"><div><h2>Understand the verdict</h2><p>ML + deterministic security rules</p></div><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#info"></use></svg></div><p class="formula">Likelihood <span>×</span> Impact <span>×</span> Exposure</p><p>Each factor ranges from 1–10. A matching rule raises likelihood to at least 9. The original attack weights and rule precedence are preserved.</p><div class="risk-bands"><span>Low <strong>1–125</strong></span><span>Medium <strong>126–500</strong></span><span>High <strong>501–1,000</strong></span></div><p class="small muted">Rule-only mode has no ML probability. Confidence, when ML is applied, is the model's predicted-class probability, not a measured chance of an attack. Synthetic demo confidence is not benchmark performance.</p></article>
+  </section>
+  <footer><span>SentinelNIDS · Educational intrusion detection prototype</span><span>Polling every 5 seconds · UTC storage · No live capture</span></footer>
+</main>
+<dialog id="alert-dialog" aria-labelledby="detail-title"><div class="dialog-heading"><div><p class="eyebrow">DETECTION EVIDENCE</p><h2 id="detail-title">Alert details</h2></div><button id="close-dialog" class="icon-button" aria-label="Close alert details"><svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="/assets/vendor/lucide.svg#x"></use></svg></button></div><div id="detail-content"></div></dialog>
 </body>
 </html>

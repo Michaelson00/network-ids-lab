@@ -1,263 +1,281 @@
-# Run and test the NIDS lab
+# Run and test SentinelNIDS
 
-Educational local prototype. Run all shell commands from the repository root.
-No traffic generators or external attack targets are needed for these checks.
+Current classification: **B — Demo functional.** Rules, risk scoring, API, SQLite,
+dashboard, four demo scenarios and offline lab-capture analysis work today.
+The selected benchmark model/scaler must still be exported by the ML owner.
+See [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md) and
+[exact artifact handoff](docs/MISSING_ARTIFACTS.md).
 
-## A–C. Prerequisites and installation
+## 1. Install and start
 
-Use Python 3.11+ and a POSIX shell (macOS/Linux). The model owner must supply
-the Python, scikit-learn, numpy and joblib versions used for serialization;
-use those versions if the artifacts cannot load in a current environment.
+From repository root, with Python 3.11+ and a POSIX shell:
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-```
-
-## D. Required files and input
-
-Obtain these two trusted artifacts from the **same selected training run**:
-
-- `src/models/random_forest_model.pkl`
-- `src/models/scaler.pkl`
-
-They are absent from this checkout and intentionally ignored by Git. Never
-load untrusted pickle/joblib files. Do not substitute the separate binary
-model described in older DA1 notes. No retraining is necessary for this repair.
-`notebooks/02_model_comparison.ipynb` trains the selected multiclass forest on
-StandardScaler output and saves both artifacts at the paths above.
-
-`src/features/schema.json` records the 78 training columns, checked against
-`src/models/sample_input.csv` and the documented feature list. Named inputs
-are stripped of surrounding column whitespace and reordered. Positional
-inputs must already follow this order. Missing/extra/duplicate columns,
-labels, nonnumeric, boolean, NaN and infinite values are rejected. Inference
-rejects bad rows rather than dropping them silently; EDA drops invalid rows.
-The loader checks artifact feature counts and feature names where available.
-The notebook's forest receives arrays, so only its scaler retains names;
-artifact provenance still requires the model owner's confirmation.
-
-The sample CSV is supplied; raw CICIDS data is only needed for notebook work.
-There is **no automatic packet capture → CICIDS2017 flow extractor** in this
-repository. PCAPs alone cannot be POSTed to the model. Export matching flow
-features externally; failed-login counts additionally require auth logs.
-Rules expect already aggregated per-source/service telemetry, including
-distinct-port connection counts. They do not aggregate packets themselves.
-
-## E. Environment
-
-No secrets or environment variables are required. Optional database location:
-
-```sh
-export NIDS_DB_PATH="$PWD/nids_alerts.db"
-```
-
-Default is `nids_alerts.db` in the repository root regardless of working
-directory. Existing legacy alert rows are preserved with additive columns.
-Database initialization also occurs under the Flask application factory.
-
-## F. Tests
-
-```sh
-python -m unittest discover -s tests -v
-python -m compileall -q src rules tests
-python -m pip check
-```
-
-Automated integration tests fit tiny temporary fixture artifacts and exercise
-the real scaler/model loader, prediction, rules, scoring, API, SQLite and
-dashboard route. They never replace or validate the team's selected model.
-No running server is required and API tests do not silently skip.
-
-## G–H. Start API and dashboard together
-
-```sh
 python -m src.api.app
 ```
 
-Open **http://127.0.0.1:5000/**. The API serves the existing dashboard at `/`
-so calls remain on the same origin. Do not open the HTML as a `file://` URL.
-The server binds only to loopback, without debug mode. This is a local demo
-server, with no authentication or production deployment guarantees.
+Open **http://127.0.0.1:5000/**. The same loopback server serves API, dashboard,
+local Chart.js and official Lucide SVGs. No frontend build, CDN or separate UI
+server is required. Do not open the HTML as a local file.
 
-In a second terminal, activate the same environment and check readiness:
+SQLite initialization/migration is automatic and preserves existing records.
+No model files, traffic producer, live capture, root access or real attacks are
+required for default demos. Scapy is used only to read stored captures offline.
+
+Optional settings (set before startup):
+
+```sh
+export NIDS_DB_PATH="$PWD/nids_alerts.db"
+export NIDS_DEMO_MODEL_DIR="$PWD/data/demo"
+```
+
+The defaults are those repository-root locations. The second variable is for
+optional synthetic fixtures, not default DEMO MODE, and cannot point at
+`src/models`. No secrets are required. Stop with **Ctrl+C**; `deactivate` exits
+the environment. Database records survive restarts.
+
+## 2. Current operating mode
+
+```sh
+curl --fail http://127.0.0.1:5000/api/health
+```
+
+- **FULL MODEL MODE** / `FULL_MODEL_MODE`: the paired selected classifier/scaler
+  loaded and passed feature-contract/available export-metadata checks. Default
+  demo inputs call that model, then the existing rules/risk path.
+- **DEMO MODE** / `DEMO_MODE`: benchmark ML is missing or incompatible. The
+  dashboard states “Benchmark ML model unavailable. Demo detection mode active.”
+  Default demos run **rules only**. `label` and `confidence` are null,
+  `ml_applied` is false, `model_kind` is `rules_only`. No synthetic classifier is
+  silently substituted, and no benchmark accuracy is claimed.
+
+API, database, rules engine, risk engine, selected model and mode have separate
+indicators. Health remains `status: degraded` without benchmark ML even when
+rules-only operation works. Loading errors are shown; startup does not pretend
+all components are healthy. A selected-model inference failure returns 503,
+not a hidden fallback verdict.
+
+## 3. First detection and all four demos
+
+Open **Detection demo**, click **Benign traffic**, then **Port scan**, **Brute
+force**, and **Denial of service**. Each request goes through feature validation,
+ML when available, actual deterministic rules, risk scoring and transactional
+storage. Dashboard KPIs/charts/recent alerts refresh immediately and poll every
+5 seconds. Generated inputs/IPs are marked **Demo / Simulated**.
+
+Or use a second terminal, from root:
 
 ```sh
 source .venv/bin/activate
-curl --fail http://127.0.0.1:5000/api/health
-curl --fail http://127.0.0.1:5000/api/alerts
-curl --fail http://127.0.0.1:5000/api/metrics
+python -m src.demo run benign
+python -m src.demo run port_scan
+python -m src.demo run brute_force
+python -m src.demo run dos
 ```
 
-Health returns HTTP 200 with `status: degraded` and `model.ready: false` if
-artifacts are absent or incompatible. `/api/process` then returns HTTP 503;
-there is no dummy prediction fallback. Healthy requires model and storage.
+Equivalent API first detection:
 
-## I. One complete detection example
+```sh
+curl --fail -X POST http://127.0.0.1:5000/api/demo \
+  -H 'Content-Type: application/json' -d '{"scenario":"port_scan"}'
+```
 
-With trusted artifacts installed and the server running:
+Expected **rules-only DEMO MODE** results:
+
+| Scenario | Category / assessment | ML label/confidence | Risk | Stored |
+|---|---|---|---:|---|
+| benign | BENIGN / no matched rule | null / null | 5 / Low | No |
+| port_scan | PORT_SCAN | null / null | 180 / Medium | Yes |
+| brute_force | BRUTE_FORCE | null / null | 378 / Medium | Yes |
+| dos | DOS | null / null | 648 / High | Yes |
+
+After all four once in a fresh database: **3 alerts, 1 High, 2 Medium, 0 Low,
+3 Untriaged**, source `rule`. Existing records increase totals. BENIGN here
+means no supported attack rule matched, not a benchmark prediction or a safety
+guarantee. Benign results do not create attack records.
+
+The original risk model remains Likelihood × Impact × Exposure, factors 1–10.
+A rule match raises likelihood to at least 9. Impact weights remain 1/4/7/9/6
+for BENIGN/PORT_SCAN/BRUTE_FORCE/DOS/OTHER_ATTACK. Severity bands: Low 1–125,
+Medium 126–500, High 501–1000. Full-model scores depend on actual ML probability;
+non-benign ML categories and the existing rule precedence remain unchanged.
+
+## 4. Full Model Mode — exact handoff
+
+Place trusted SAME-RUN files at:
+
+```text
+src/models/random_forest_model.pkl
+src/models/scaler.pkl
+```
+
+Both use `joblib.load`. The selected model was trained on StandardScaler output;
+this scaler is required even though forests do not intrinsically require scaling.
+No encoder is used. The 78 ordered finite numeric inputs are defined once in
+`src/features/schema.json` and shared by API/export/inference. Named inputs are
+reordered; positional arrays must already be ordered. Missing/extra/duplicate
+columns, target labels, booleans, NaN/infinity and nonnumeric data are rejected.
+
+The ML notebook currently includes saved results but its final export cell was
+not executed. In the actual fitted notebook session, run cell 21
+(`91aab743f061a8f6`) using `export_fitted(model_rf, scaler)` as documented in
+[MISSING_ARTIFACTS.md](docs/MISSING_ARTIFACTS.md). This exports the selected
+original 100-tree model, scaler and recommended `src/models/model_metadata.json`
+with versions, classes and checksums. Existing files require explicit overwrite
+consent in code. Metadata, when supplied, is checked at load time.
+
+If the fitted session is unavailable, the real cleaned benchmark CSV is needed
+to reproduce the existing notebook. It is absent here; no retraining script is
+run or artificial benchmark generated. Saved notebook outputs are historical
+experimental evidence, not trained weights or a fresh accuracy validation.
+
+Restart the server, check `FULL_MODEL_MODE`, then run:
 
 ```sh
 python tests/test_real_traffic.py
 ```
 
-This POSTs the first supplied CSV flow, prints the structured result, and
-checks storage if an attack was detected. A benign result does not create a
-stored alert. This is a flow-table test, not raw packet replay.
+This submits the first existing sample CSV row through `/api/process`; its
+unlabelled row is not assumed benign. The endpoint stays strict and returns 503
+without real benchmark artifacts. Default `/api/demo` uses selected inference
+when available, while retaining simulated-input provenance.
 
-## J–K. Safe benign, port scan, brute-force and DoS checks
+## 5. Offline PCAP mode — actual supplied captures
 
-Run the deterministic automated four-scenario test (temporary fixture model):
-
-```sh
-python -m unittest discover -s tests -p test_integration.py -v
-```
-
-For a live demonstration with the selected model, POST the same real sample
-flow with controlled rule telemetry. These requests simulate metadata only:
+In **Offline capture analysis**, choose `scan_nmap_synscan.pcapng` and click
+**Process offline capture**. Or:
 
 ```sh
-python - <<'PY'
-import csv
-import requests
-with open('src/models/sample_input.csv') as stream:
-    row = next(csv.DictReader(stream))
-features = [{key.strip(): float(value) for key, value in row.items()}]
-cases = {
-    'baseline (model decides label)': {},
-    'port scan': {'connection_count': 35, 'connection_window_seconds': 8},
-    'brute force': {'failed_logins': 7, 'login_window_seconds': 30},
-    'DoS': {'request_count': 1500, 'request_window_seconds': 1},
-}
-for name, event in cases.items():
-    response = requests.post('http://127.0.0.1:5000/api/process',
-        json={'features': features, 'event': event, 'exposure': 8}, timeout=30)
-    print(name, response.status_code, response.json())
-    response.raise_for_status()
-PY
+python -m src.demo captures
+python -m src.demo capture scan_nmap_synscan.pcapng
 ```
 
-The real sample's label is not assumed benign. Use a known labelled benign
-holdout flow from the model owner to establish a true benign baseline.
-Rules override a benign ML category; a non-benign ML category remains as
-implemented, with all rule matches retained. Multiple matches use the first
-rule category for a benign prediction: scan, brute force, then DoS.
-
-Expected fields: `label`, `prediction`, `category`, `confidence`, `risk_score`,
-`risk_level`, `severity`, `detection_source`, `rule_matches`, `status`,
-`alert_generated`, `alert_id`. Risk remains Likelihood × Impact × Exposure,
-factors 1–10. Benign confidence does not imply zero risk (default score 5).
-Low is ≤125, Medium ≤500, High >500. Attacks are stored, benign results are
-returned without storage. Stored alerts include timestamp and triage status.
-Metrics count stored attack alerts, not total processed/benign traffic.
-Dashboard polls alerts/metrics every 5 seconds and health every 10 seconds.
-
-## L. Troubleshooting
-
-- `ModuleNotFoundError`: activate `.venv`, install requirements, run from root.
-- HTTP 400: check 78-column schema, numeric finite data, exactly one flow,
-  exposure 1–10, and complete count/window pairs with nonnegative counts
-  and positive windows. Batch `predict()` remains available for Python use.
-- HTTP 503/model unavailable: provide both artifacts, restart the server,
-  and match training library versions. Never bypass scaling to silence errors.
-- Storage unavailable: check `NIDS_DB_PATH` parent directory and permissions.
-- Port 5000 occupied: stop the other process, or use
-  `python -m flask --app src.api.app:create_app run --host 127.0.0.1 --port 5001`
-  and open that port in the browser (manual scripts use 5000).
-- No dashboard rows: benign flows are not stored; check readiness and API
-  response. Missing models do not manufacture demo alerts.
-- Offline installs require an approved local wheel cache or network access.
-- Existing tracked lab captures are retained; new captures and databases are
-  ignored. Review existing captures privately before any publication.
-
-## M. Stop services
-
-Press **Ctrl+C** in the server terminal. `deactivate` exits the virtualenv.
-SQLite persists across restarts; use a separate `NIDS_DB_PATH` for a fresh demo.
-
-## N. Final demo procedure
-
-1. Obtain the paired artifacts and their training dependency versions.
-2. Install dependencies and run all tests above.
-3. Start the server; confirm healthy model/storage, then open the dashboard.
-4. POST a known benign holdout flow; verify low risk and no stored attack.
-5. Run the controlled metadata cases; inspect rule evidence and risk formula.
-6. Verify `/api/alerts`, `/api/metrics` and dashboard agree after polling.
-7. Explain that capture-to-feature extraction and real failed-login telemetry
-   remain external steps; offline evaluation figures are historical reports.
-8. Stop the server. Keep all actual traffic simulations inside the authorized,
-   isolated host-only lab described in `lab/`; never target public systems.
-
-## Audit scope and remaining handoffs
-
-Reviewed the source, tests, dashboard, notebook code/recorded outputs, lab
-instructions/capture file headers, model handoff, feature contract, historical
-result tables and project documentation. Existing lab captures and evaluation
-artifacts were preserved. No credentials/private-key markers or machine-specific
-absolute paths were found in the reviewed source/docs; existing packet payloads
-have not been certified free of sensitive data.
-
-Main repairs: nonexistent API imports/signatures; missing Flask/joblib/requests
-dependencies; eager loading of absent artifacts; missing feature validation;
-API bypass of rule detection; loss of confidence/category/evidence in storage;
-database initialization limited to direct execution; cross-origin dashboard
-requests; unsafe HTML interpolation; and a server-dependent skipped API test.
-The existing risk formula, weights, categories, thresholds and rule precedence
-are preserved. No selected-model retraining, packet generator or live capture
-service was added.
-
-Model owner: supply the paired selected artifacts and training package versions,
-then run the live sample and known labelled holdout cases. Network/data owners:
-provide compatible flow exports and aggregated/authentication telemetry to
-connect existing captures to inference. Real browser rendering/responsiveness
-and capture payload privacy require separate verification.
-
-## Validation recorded on 2026-10-17
-
-- Full suite: `Ran 13 tests in 1.076s`, `OK` (no skips or resource warnings).
-- All four scenarios exercised with temporary fitted artifacts, not the missing
-  selected model. Scoring/canonical-label regressions retained.
-- Dependency check: `No broken requirements found.`
-- Compileall, dashboard JavaScript syntax, local Markdown links and
-  `git diff --check` passed.
-- JavaScript mocked-DOM checks passed for degraded health, null severity,
-  safe text rendering and offline handling; no real-browser check was run.
-- Local HTTP smoke: dashboard/health/alerts/metrics return 200; missing artifacts
-  produce processing 503. Temporary fitted-model HTTP checks return all four
-  expected categories, persist three attack alerts and show matching metrics.
-  Both temporary servers stopped; the selected model was not tested.
-- This environment required execution permission for package downloads and
-  loopback sockets. Initial native SciPy imports were slow but completed.
-
-## Weeks 1–4 issue audit
-
-See [docs/FINAL_ISSUE_AUDIT.md](docs/FINAL_ISSUE_AUDIT.md) for every supplied
-role/week requirement and [consolidated final report](docs/final-report.md).
-The percentage counts only fully evidenced role requirements and does not imply
-that missing selected artifacts, benchmark analysis, VM checks, capture privacy
-or browser validation have been completed.
-
-The EDA's duplicate/constant/correlation cells were added during the final audit
-and have no benchmark outputs. The ML notebook contains experiment code but no
-saved numeric evaluation outputs. Run notebooks only when the data owner provides
-the required benchmark inputs; avoid overwriting selected artifacts during demos.
-Historical selected-model metric/tuning claims need the ML owner's outputs.
-
-Notebook syntax and structure can be checked without running training:
+Equivalent API request:
 
 ```sh
-python - <<'PYCODE'
-import ast
-import json
-from pathlib import Path
-import nbformat
-for path in Path('notebooks').glob('*.ipynb'):
-    notebook = nbformat.read(path, as_version=4)
-    nbformat.validate(notebook)
-    for cell in notebook.cells:
-        if cell.cell_type == 'code':
-            ast.parse(cell.source)
-    print(path, 'structure and code syntax OK; not executed')
-PYCODE
+curl --fail -X POST http://127.0.0.1:5000/api/captures/process \
+  -H 'Content-Type: application/json' -d '{"capture":"scan_nmap_synscan.pcapng"}'
 ```
+
+Only existing authorized files directly under `lab/` are accepted; no arbitrary
+filesystem path, upload, live sniffing or replay is supported. Processing is
+bounded to 50 MiB/200,000 packets. Packet headers are read offline, grouped by
+source/target; distinct SYN destination ports use sliding 10-second windows,
+SYN attempt volume is grouped by destination service in 1-second windows.
+Counters run through the EXISTING security rules/risk and the same alert store.
+These are real packet observations, not demo rows; demo reset preserves them.
+
+Actual checks on supplied files:
+
+| File in `lab/` | Packets read | Supported rule outcome |
+|---|---:|---|
+| `baseline_normal_traffic.pcapng` | 128 | No matching rule |
+| `scan_nmap_synscan.pcapng` | 2017 | 1000 distinct SYN destination ports in window → PORT_SCAN, risk 180 |
+| `scan_bruteforce_ssh.pcapng` | 1297 | No failed-auth evidence inferred from encrypted SSH |
+| `scan_dos_trimmed.pcapng` | 500 | Below >1000-in-1s threshold; no DoS manufactured |
+
+The volume counter is initial SYN attempts, a connection-request proxy, not an
+HTTP request count. This is **not a CICFlowMeter clone or 78-feature exporter**.
+Benchmark ML is not applied to packet-counter summaries even in full-model mode.
+Compatible flow export and real authentication failures would be required for
+those additional validations. No rule match does not establish benign traffic.
+Stored evidence includes file hash, capture time range, counts and rule inputs;
+alert timestamps show analysis time. Reprocessing creates a new analysis alert.
+
+## 6. Analytics, evidence and reset
+
+KPIs, severity/category/source charts and recent records come from SQLite.
+Counts describe stored attack alerts, not processed/benign flows, throughput or
+accuracy. Activity shows hourly counts and mean risk in the last 24 hours (25
+hour labels with partial endpoints). Empty-hour risk is null, not fake zero.
+
+Scope affects overview/table data; severity/category/source filters affect only
+the recent 50 matching rows. “Submitted / Legacy” scope also includes real offline
+capture observations. Demo, offline-rule and selected-model provenance remain
+visible. Open an alert to inspect actual stored evidence and risk factors.
+
+Use **Clear demo alerts** and confirm, or:
+
+```sh
+python -m src.demo reset --confirm
+```
+
+Only `is_demo = 1` records are deleted. Offline capture, manual and legacy
+records are preserved. Nothing is deleted at startup. API failures label
+stale/unavailable values instead of inventing zeros. Lucide SVGs and Chart.js are
+bundled under `dashboard/vendor/` with licenses; no runtime CDN is needed.
+
+## 7. Optional synthetic fixture compatibility
+
+The earlier synthetic model remains available ONLY by explicit opt-in, not as a
+benchmark or automatic fallback:
+
+```sh
+python -m src.demo prepare
+python -m src.demo run port_scan --model-mode synthetic
+```
+
+It saves only under ignored `data/demo/`, never the selected-model directory.
+Records carry `model_kind: synthetic_demo` and simulated provenance. Synthetic
+confidence is not benchmark accuracy. Default `run` uses `--model-mode auto`;
+`--model-mode rules` explicitly skips ML even when selected artifacts exist.
+
+## 8. Tests and final presentation
+
+```sh
+python -m unittest discover -s tests -v
+python -m compileall -q src rules tests
+python -m pip check
+python tests/browser_smoke.py --output /private/tmp/sentinelnids-browser
+```
+
+The unittest suite uses temporary DBs/artifacts and actual capture files; it
+checks mode selection, null ML provenance, rules/scoring, export/schema/checksum
+validation, persistence/reset protection, filters, analytics and error responses.
+The optional real Chrome check verifies mode banner, all four scenarios, real
+charts/KPIs, evidence, capture ingestion, mobile/Lucide rendering, polling and
+reset preserving actual capture rows. Chrome/Chromium and loopback/subprocess
+permission are needed; set `NIDS_CHROME_BINARY` if not found. `websocket-client`
+is already included through the notebook dependencies. No benchmark model is
+claimed verified; full-mode wiring is tested with explicitly test-owned fixtures.
+
+Presentation: start → show DEMO MODE → benign/no attack → port scan/180 → open
+rule evidence → charts update → brute force/DoS → process real Nmap capture →
+inspect packet counters → clear demo rows while retaining capture alert → explain
+missing ML export and external auth/feature validation boundaries → Ctrl+C.
+
+## 9. Troubleshooting
+
+- Zero alerts: run a demo or process a stored capture; startup is not a traffic
+  producer. Check scope/table filters. Benign events deliberately create no alerts.
+- No selected model: use working DEMO MODE, or obtain the exact ML export. Never
+  copy synthetic artifacts into `src/models` or treat package-test pickles as ML.
+- Full-model load fails: check paired files, training package versions and optional
+  metadata checksums/schema. Restart after changing artifacts.
+- Capture request rejected: select a filename listed by `/api/captures`; ensure
+  Scapy is installed through requirements, readable file, and bounded size.
+- SSH/trimmed DoS produces no alert: this is the actual evidence/threshold result,
+  not a broken pipeline. Use supported demos for reproducible scenarios.
+- HTTP 400: check feature count/types, valid IP strings, exposure 1–10 and complete
+  count/window pairs with positive durations.
+- Storage failure: check database parent/path permissions; use a separate DB path
+  for a fresh presentation rather than deleting existing records.
+- API offline: start from root in `.venv`; inspect `/api/health`. Port 5000 busy:
+  `python -m flask --app src.api.app:create_app run --host 127.0.0.1 --port 5001`,
+  then use `python -m src.demo --url http://127.0.0.1:5001 run port_scan`.
+- Offline dependency install requires a wheel cache or approved network access.
+
+Exact external ownership: [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md).
+This is a local educational prototype, not an authenticated production SOC.
+
+### Latest executed validation (2026-10-24)
+
+`python -m unittest discover -s tests -v`: **24 passed, 0 failed, 0 skipped**,
+`Ran 24 tests in 4.861s`, `OK`. Real Chrome and CLI end-to-end checks passed,
+including DEMO MODE, four scenarios, actual Nmap capture analysis and reset
+preserving offline observations. Full benchmark artifacts remain an external
+handoff; no real benchmark-model success is claimed. Existing user data was
+preserved; all operational verification used temporary databases.

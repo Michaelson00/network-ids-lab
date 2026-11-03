@@ -1,5 +1,13 @@
 # SentinelNIDS: Final Test Results
 
+Verification note (2026-10-24): the 2026-10-21 account below is retained as a
+teammate's historical report. Its selected artifacts and `pcap_to_flows.py` are
+absent from this checkout, so its real-model/capture results cannot be reproduced
+here. Do not run the missing converter command as current setup instructions.
+Current actual verification is in [FUNCTIONAL_IMPLEMENTATION.md](FUNCTIONAL_IMPLEMENTATION.md)
+and [RUN_AND_TEST.md](../RUN_AND_TEST.md); synthetic demo results are not confirmation
+of the historical benchmark figures.
+
 Date tested: 21 October 2026. Branch: test.
 
 ## System checks
