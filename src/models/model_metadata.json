@@ -1,0 +1,37 @@
+{
+  "model": "selected multiclass RandomForestClassifier",
+  "training": "notebooks/02_model_comparison.ipynb",
+  "feature_schema": "src/features/schema.json",
+  "feature_schema_sha256": "d45bfd60445c8d7ed315ad52ed6ca80cfd31cd6668d54bdea852ed2280fea7c8",
+  "feature_count": 78,
+  "feature_dtype": "finite numeric",
+  "labels": [
+    "BENIGN",
+    "Bot",
+    "DDoS",
+    "DoS GoldenEye",
+    "DoS Hulk",
+    "DoS Slowhttptest",
+    "DoS slowloris",
+    "FTP-Patator",
+    "Heartbleed",
+    "Infiltration",
+    "PortScan",
+    "SSH-Patator",
+    "Web Attack - Brute Force",
+    "Web Attack - Sql Injection",
+    "Web Attack - XSS"
+  ],
+  "preprocessing": "paired fitted StandardScaler.transform before prediction",
+  "python": "3.13.2",
+  "packages": {
+    "scikit-learn": "1.9.1",
+    "numpy": "2.4.2",
+    "pandas": "3.0.1",
+    "joblib": "1.6.0"
+  },
+  "artifact_sha256": {
+    "random_forest_model.pkl": "42ad5a121e3cbe7ce0133dff781dae6c355bbd210f9283b8007616798b13b06e",
+    "scaler.pkl": "4948abc9e0923292d3b9bd2f5e24b8d6be96fc7e0bc93b183a0c1892de10290a"
+  }
+}
