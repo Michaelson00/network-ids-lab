@@ -1,20 +1,21 @@
-# Final blocker ownership — 2026-10-24
+# Final blocker ownership — 2026-11-05
 
-**Current classification: B — Demo functional.** Default demos automatically use
-selected benchmark ML when installed; otherwise they use transparent rules-only
-DEMO MODE. Optional synthetic fixtures require explicit opt-in and never stand
-in for benchmark artifacts. Existing records and captures are preserved.
+**Current classification: FULL_MODEL_MODE runtime verified.** Selected benchmark
+model/scaler artifacts are checked in; the runtime validates their metadata,
+schema and hashes. Benchmark accuracy still needs a labelled holdout evaluation.
+Optional synthetic fixtures require explicit opt-in and never replace the
+selected model. Existing records and captures are preserved.
 
 | Problem | Code Fix Possible? | Current Status | Required Action | Owner | Required File/Output |
 |---|---|---|---|---|---|
 | No operational input / empty dashboard | YES | FIXED | Use four dashboard or CLI demos; no automatic traffic generation | Codebase / DevOps | `/api/demo`, dashboard controls, `src/demo.py` |
 | Missing demo prediction compatibility | YES | FIXED | Auto-select benchmark ML or explicit rules-only fallback; null labels/confidence when ML absent | Codebase / DevOps | `src/api/app.py`, `src/detection/pipeline.py` |
 | API/scoring/storage wiring, initialization and retrieval | YES | FIXED / VERIFIED | Existing pipeline and additive schema reused; no direct frontend alert insertion | Codebase / DevOps | `/api/process`, `/api/demo`, SQLite and `/api/alerts` |
-| Selected benchmark model unavailable | PARTIAL | EXTERNAL ARTIFACT NEEDED | Run original notebook final export cell in the actual fitted session; supply trusted same-run forest | ML Engineer | `src/models/random_forest_model.pkl` |
-| Paired scaler unavailable | PARTIAL | EXTERNAL ARTIFACT NEEDED | Export same fitted StandardScaler used for training; scaling is required by selected implementation | ML Engineer | `src/models/scaler.pkl` |
-| Pending / unsafe export and provenance | YES | EXPORT CODE FIXED; HUMAN EXECUTION NEEDED | Helper checks selected config/order, protects existing files, emits versions/classes/checksums; ML owner runs it | Codebase / DevOps (code); ML Engineer (artifact) | `src/models/export.py`; notebook cell 21; `model_metadata.json` recommended |
+| Selected model blocked by stale schema hash | YES | FIXED / VERIFIED | Corrected the manifest hash; checked-in model loads | Codebase / ML Engineer | `src/models/random_forest_model.pkl`, `src/models/model_metadata.json` |
+| Paired scaler unavailable | YES | FIXED / VERIFIED | Checked-in paired scaler passes 78-feature order and hash checks | Codebase / ML Engineer | `src/models/scaler.pkl` |
+| Pending / unsafe export and provenance | YES | FIXED / VERIFIED | Export helper protects existing files; checked-in metadata verifies classes, schema and artifact hashes | Codebase / DevOps | `src/models/export.py`, `src/models/model_metadata.json` |
 | Feature ordering/types mismatch risk | YES | FIXED / VERIFIED | Existing 78-column contract shared by validation, inference and export; no duplicate schema | Codebase / DevOps | `src/features/schema.json`, finite numeric validation, export/loader checks |
-| Dataset unavailable for any future retraining | NO (data) | CONDITIONAL HANDOFF | Only if fitted objects/exports cannot be recovered, supply real cleaned dataset; no synthetic benchmark training | Data Analyst | `data/processed/cicids2017_clean.csv`, or original eight CSVs in `data/raw/` |
+| Raw benchmark dataset unavailable | NO (data) | STILL MISSING / NOT REQUIRED FOR RUNTIME | Supply real cleaned data to retrain, independently reproduce, or build a labelled holdout evaluation | Data Analyst | `data/processed/cicids2017_clean.csv`, or original eight CSVs in `data/raw/` |
 | Feature list / preprocessing / labels unclear | YES | RESOLVED | Existing schema, notebook scaler/string-label implementation and exact handoff documented; no redo needed | No external action | `docs/MISSING_ARTIFACTS.md`, schema, notebook |
 | Existing PCAPs never processed | YES | FIXED / VERIFIED | Offline file reader extracts actual SYN distinct-port/volume counters and calls real rules/risk/storage | Codebase / DevOps | `src/captures/offline.py`, `/api/captures/process`, CLI/UI control |
 | Capture filenames/location unknown | YES | RESOLVED | All four authorized captures found and catalogued | No external action | `lab/*.pcapng` exact list in MISSING_ARTIFACTS |
@@ -30,22 +31,21 @@ in for benchmark artifacts. Existing records and captures are preserved.
 
 ## Evidence and code-only completion
 
-The full repository search found only the separate synthetic pair in `data/demo/`,
-not hidden/renamed benchmark weights. Current model notebook has saved numeric
-outputs and an unexecuted final export cell; those outputs do not serialize its
-trees. Export was repaired, not simulated. No training utility was executed or
-added to invent missing data; the actual benchmark dataset is absent.
+The selected model/scaler and manifest are now tracked under `src/models/`.
+Runtime checks confirm the selected classifier configuration, labels, scaler
+feature order and checksums. The raw/cleaned benchmark dataset remains absent,
+so no retraining or independent accuracy evaluation was performed.
 
-The current application supports a positive demonstration today: open DEMO MODE,
-run benign/scan/brute-force/DoS, inspect real rules/risk and stored evidence, watch
+The current application supports FULL_MODEL_MODE: run benign/scan/brute-force/DoS,
+inspect model/rule risk and stored evidence, watch
 charts update, then process `scan_nmap_synscan.pcapng` and see a real offline
 PORT_SCAN alert. Default rule-only demo risks: 5, 180, 378 and 648 respectively.
 Benchmark and optional synthetic model probabilities are never claimed for these
 rule-only outcomes. No rule match is not a guarantee that traffic is benign.
 
-Original benchmark ML was not verified and remains an external artifact handoff.
-Actual live isolation, packet-payload privacy and benchmark accuracy remain owner
-validation boundaries, not unresolved application wiring.
+The included model's runtime wiring is verified; benchmark accuracy is not.
+Actual live isolation, packet-payload privacy and accuracy against a labelled
+holdout remain owner validation boundaries, not unresolved application wiring.
 
 ## Handoff and validation
 
@@ -55,19 +55,20 @@ Final verification results are recorded in the runbook and implementation notes.
 
 ## Final executed checks
 
-- Baseline: `python -m unittest discover -s tests -v` → 18 passed, 0 failed.
-- Final same command → **24 passed, 0 failed, 0 skipped**, `Ran 24 tests in 4.861s`, `OK`.
-- Real Chrome: DEMO MODE banner, four rule-only demos, charts/KPIs, evidence,
-  Lucide/mobile layout, polling, actual Nmap capture processing and reset that
-  retains the capture alert → PASS. Temporary browser/server state removed.
-- Actual CLI commands: four default demos, capture catalogue, real Nmap ingestion
-  and demo-only reset → PASS against temporary local storage.
+- `.venv/bin/python -m unittest discover -s tests -v` → **25 passed, 0 failed**.
+- `.venv/bin/python -m compileall -q src rules tests` and `git diff --check` → PASS.
+- Selected-model smoke: `/api/health` returned healthy `FULL_MODEL_MODE`; default
+  demo used the selected model; sample `/api/process` returned HTTP 200.
+- Real Chrome rules-only fallback: four demos, charts/KPIs, evidence, Lucide/mobile
+  layout, polling, actual Nmap capture processing and demo reset preserving the
+  capture alert → PASS. The test explicitly disables selected-model loading.
+  Temporary browser/server state and screenshots removed.
 - Export/checksum/schema tests use test-owned fitted objects; they do not export
-  synthetic fixtures as real benchmark artifacts. Real benchmark loader remains
-  unavailable, and full-mode wiring tests do not claim real-model accuracy.
-- Notebook structure/code syntax, shared 78-column sample schema, compileall,
-  JavaScript syntax, documentation links, dependency consistency and
-  `git diff --check` passed. No benchmark training was executed.
+  synthetic fixtures as real benchmark artifacts. The checked-in model was
+  separately loaded and exercised after its manifest hash was corrected; this
+  does not establish benchmark accuracy.
+- The manifest regression test checks schema and model/scaler checksums. No
+  benchmark training or labelled accuracy evaluation was performed.
 - The user's tracked database already had two rows at the start and still has
   two rows. It was inspected read-only; no presentation seed/reset was performed
   against it. Existing captures and saved experimental outputs were preserved.

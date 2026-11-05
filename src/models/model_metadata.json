@@ -2,7 +2,7 @@
   "model": "selected multiclass RandomForestClassifier",
   "training": "notebooks/02_model_comparison.ipynb",
   "feature_schema": "src/features/schema.json",
-  "feature_schema_sha256": "d45bfd60445c8d7ed315ad52ed6ca80cfd31cd6668d54bdea852ed2280fea7c8",
+  "feature_schema_sha256": "de9d4d735b2635678c79c337ba0f7513093051d1a4af1953e915db5988e132fa",
   "feature_count": 78,
   "feature_dtype": "finite numeric",
   "labels": [

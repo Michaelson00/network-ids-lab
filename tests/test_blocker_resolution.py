@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from src.api.app import create_app
-from src.models.predict import ModelUnavailable
+from src.models.predict import ModelUnavailable, file_digest
 from src.models import predict as predictor
 from src.models.export import export_fitted
 from src.features.prepare import FEATURE_NAMES
@@ -23,6 +23,15 @@ class BlockerResolutionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)
         self.client=create_app(self.root/'alerts.db').test_client()
+
+    def test_checked_in_artifact_manifest_matches_schema_and_files(self):
+        project = Path(__file__).resolve().parents[1]
+        model_dir = project / 'src/models'
+        metadata = json.loads((model_dir / 'model_metadata.json').read_text())
+        schema = project / 'src/features/schema.json'
+        self.assertEqual(metadata['feature_schema_sha256'], file_digest(schema))
+        for filename, digest in metadata['artifact_sha256'].items():
+            self.assertEqual(file_digest(model_dir / filename), digest)
 
     def test_auto_demo_without_benchmark_never_calls_synthetic_predictor(self):
         with patch('src.api.app.load_artifacts', side_effect=ModelUnavailable('missing')), patch('src.api.app.predict_traffic') as predict:

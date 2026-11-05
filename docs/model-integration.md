@@ -148,4 +148,4 @@ Risk Scoring / Security Alert
 
 ## Important Note for API Integration
 
-The selected model is the scaled multiclass model in the ML notebook, not a separate binary DA1 experiment. Both artifacts are absent from this checkout. See [RUN_AND_TEST.md](../RUN_AND_TEST.md).
+The selected model is the scaled multiclass model in the ML notebook, not a separate binary DA1 experiment. Its model and paired scaler are checked in and their runtime wiring is verified; benchmark accuracy still needs a labelled holdout. See [RUN_AND_TEST.md](../RUN_AND_TEST.md).

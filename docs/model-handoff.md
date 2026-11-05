@@ -56,16 +56,15 @@ Feature importance broadly overlapped with the multiclass model above.
 See docs/da1-results/ for full outputs.
 ## Current evidence and integration boundary
 
-Both artifacts above are absent from this checkout. They must come from the
-same selected training run, with its Python/scikit-learn/numpy/joblib versions.
-`predict.py` uses `joblib.load` at module-relative paths, lazily; it checks
-78-feature counts and available feature names and fails explicitly if unavailable.
+Both artifacts are included in this checkout and loaded by `predict.py` from
+module-relative paths. The loader checks feature count/order, metadata labels,
+schema hash and both file checksums. Runtime loading and a sample prediction
+have been verified; the raw dataset and a labelled holdout are not available
+here for retraining or independent accuracy evaluation.
 The API calls `predict_traffic`, then `build_alert`; clients cannot supply labels.
 The model probability is taken from the predicted class's `predict_proba` column.
 
 The multiclass performance figures and tuning outcome above are the ML owner's
-reported historical observations. The model notebook has code but **no saved
-numeric evaluation outputs**, and these results have not been reproduced in this
-audit. Do not present the DA1 binary CSVs as multiclass verification. Temporary
-fixture model predictions pass the application tests; real-model sample/holdout
-predictions remain blocked. See [run guide](../RUN_AND_TEST.md).
+reported historical observations, not independently reproduced results. Do not
+present the DA1 binary CSVs as multiclass verification or treat the sample
+prediction as accuracy evidence. See [run guide](../RUN_AND_TEST.md).

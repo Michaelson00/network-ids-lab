@@ -61,9 +61,10 @@ python -m src.api.app
 Open http://127.0.0.1:5000/, then click **Detection demo → Port scan**.
 It processes validated simulated features through benchmark ML when available,
 otherwise transparent rules-only DEMO MODE, then risk/storage and the dashboard. No packets or network attacks are generated.
-The selected CICIDS2017 model/scaler are still an external ML-owner handoff;
-the demo never replaces them or claims benchmark accuracy. Existing lab captures
-can now be read offline through packet-header rules (not invented ML features).
+The selected CICIDS2017 model/scaler are included in `src/models/` and run when
+their manifest checks pass. This does not independently validate benchmark
+accuracy. Existing lab captures can be read offline through packet-header rules
+(not invented ML features).
 
 [RUN_AND_TEST.md](RUN_AND_TEST.md) covers four demos, manual flow submission,
 readiness, analytics, safe demo-only reset and tests. Raw PCAP-to-flow export
@@ -88,3 +89,5 @@ Licenses are preserved under `dashboard/vendor/`.
 
 Current mode and role handoffs: [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md) and
 [MISSING_ARTIFACTS.md](docs/MISSING_ARTIFACTS.md).
+For reviewers, current validation commands and prioritized follow-up work, see
+the [developer handoff](docs/DEVELOPER_HANDOFF.md).

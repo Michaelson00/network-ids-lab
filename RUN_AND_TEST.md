@@ -1,8 +1,9 @@
 # Run and test SentinelNIDS
 
-Current classification: **B — Demo functional.** Rules, risk scoring, API, SQLite,
-dashboard, four demo scenarios and offline lab-capture analysis work today.
-The selected benchmark model/scaler must still be exported by the ML owner.
+Current status: selected model/scaler are checked in and verified in
+`FULL_MODEL_MODE`; rules-only fallback, API, SQLite, dashboard, four scenarios
+and offline capture analysis are also tested. Benchmark accuracy still needs a
+labelled holdout evaluation.
 See [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md) and
 [exact artifact handoff](docs/MISSING_ARTIFACTS.md).
 
@@ -80,17 +81,17 @@ Equivalent API first detection:
 
 ```sh
 curl --fail -X POST http://127.0.0.1:5000/api/demo \
-  -H 'Content-Type: application/json' -d '{"scenario":"port_scan"}'
+  -H 'Content-Type: application/json' -d '{"scenario":"port_scan","model_mode":"rules"}'
 ```
 
-Expected **rules-only DEMO MODE** results:
+Expected results for rules-only mode:
 
-| Scenario | Category / assessment | ML label/confidence | Risk | Stored |
-|---|---|---|---:|---|
-| benign | BENIGN / no matched rule | null / null | 5 / Low | No |
-| port_scan | PORT_SCAN | null / null | 180 / Medium | Yes |
-| brute_force | BRUTE_FORCE | null / null | 378 / Medium | Yes |
-| dos | DOS | null / null | 648 / High | Yes |
+| Scenario    | Category / assessment    | ML label/confidence |         Risk | Stored |
+| ----------- | ------------------------ | ------------------- | -----------: | ------ |
+| benign      | BENIGN / no matched rule | null / null         |      5 / Low | No     |
+| port_scan   | PORT_SCAN                | null / null         | 180 / Medium | Yes    |
+| brute_force | BRUTE_FORCE              | null / null         | 378 / Medium | Yes    |
+| dos         | DOS                      | null / null         |   648 / High | Yes    |
 
 After all four once in a fresh database: **3 alerts, 1 High, 2 Medium, 0 Low,
 3 Untriaged**, source `rule`. Existing records increase totals. BENIGN here
@@ -103,9 +104,9 @@ for BENIGN/PORT_SCAN/BRUTE_FORCE/DOS/OTHER_ATTACK. Severity bands: Low 1–125,
 Medium 126–500, High 501–1000. Full-model scores depend on actual ML probability;
 non-benign ML categories and the existing rule precedence remain unchanged.
 
-## 4. Full Model Mode — exact handoff
+## 4. Full Model Mode — checked-in artifacts
 
-Place trusted SAME-RUN files at:
+The selected classifier and paired scaler are already present at:
 
 ```text
 src/models/random_forest_model.pkl
@@ -119,18 +120,16 @@ No encoder is used. The 78 ordered finite numeric inputs are defined once in
 reordered; positional arrays must already be ordered. Missing/extra/duplicate
 columns, target labels, booleans, NaN/infinity and nonnumeric data are rejected.
 
-The ML notebook currently includes saved results but its final export cell was
-not executed. In the actual fitted notebook session, run cell 21
-(`91aab743f061a8f6`) using `export_fitted(model_rf, scaler)` as documented in
-[MISSING_ARTIFACTS.md](docs/MISSING_ARTIFACTS.md). This exports the selected
-original 100-tree model, scaler and recommended `src/models/model_metadata.json`
-with versions, classes and checksums. Existing files require explicit overwrite
-consent in code. Metadata, when supplied, is checked at load time.
+The checked-in metadata records model/scaler hashes, class labels and schema
+provenance; the loader verifies these checks before inference. If replacing the
+pair, use the notebook's selected export cell and `export_fitted(model_rf,
+scaler)` as documented in [MISSING_ARTIFACTS.md](docs/MISSING_ARTIFACTS.md).
+Existing files require explicit overwrite consent in code.
 
 If the fitted session is unavailable, the real cleaned benchmark CSV is needed
-to reproduce the existing notebook. It is absent here; no retraining script is
-run or artificial benchmark generated. Saved notebook outputs are historical
-experimental evidence, not trained weights or a fresh accuracy validation.
+to reproduce or retrain the existing notebook. It is absent here; no retraining
+script is run or artificial benchmark generated. Saved notebook outputs are
+historical experimental evidence, not a fresh accuracy validation.
 
 Restart the server, check `FULL_MODEL_MODE`, then run:
 
@@ -139,9 +138,9 @@ python tests/test_real_traffic.py
 ```
 
 This submits the first existing sample CSV row through `/api/process`; its
-unlabelled row is not assumed benign. The endpoint stays strict and returns 503
-without real benchmark artifacts. Default `/api/demo` uses selected inference
-when available, while retaining simulated-input provenance.
+unlabelled row is not assumed benign. Default `/api/demo` uses selected inference
+when available, while retaining simulated-input provenance. `/api/process`
+returns 503 if selected artifacts are unavailable or invalid.
 
 ## 5. Offline PCAP mode — actual supplied captures
 
@@ -170,12 +169,12 @@ These are real packet observations, not demo rows; demo reset preserves them.
 
 Actual checks on supplied files:
 
-| File in `lab/` | Packets read | Supported rule outcome |
-|---|---:|---|
-| `baseline_normal_traffic.pcapng` | 128 | No matching rule |
-| `scan_nmap_synscan.pcapng` | 2017 | 1000 distinct SYN destination ports in window → PORT_SCAN, risk 180 |
-| `scan_bruteforce_ssh.pcapng` | 1297 | No failed-auth evidence inferred from encrypted SSH |
-| `scan_dos_trimmed.pcapng` | 500 | Below >1000-in-1s threshold; no DoS manufactured |
+| File in `lab/`                   | Packets read | Supported rule outcome                                              |
+| -------------------------------- | -----------: | ------------------------------------------------------------------- |
+| `baseline_normal_traffic.pcapng` |          128 | No matching rule                                                    |
+| `scan_nmap_synscan.pcapng`       |         2017 | 1000 distinct SYN destination ports in window → PORT_SCAN, risk 180 |
+| `scan_bruteforce_ssh.pcapng`     |         1297 | No failed-auth evidence inferred from encrypted SSH                 |
+| `scan_dos_trimmed.pcapng`        |          500 | Below >1000-in-1s threshold; no DoS manufactured                    |
 
 The volume counter is initial SYN attempts, a connection-request proxy, not an
 HTTP request count. This is **not a CICFlowMeter clone or 78-feature exporter**.
@@ -237,15 +236,20 @@ checks mode selection, null ML provenance, rules/scoring, export/schema/checksum
 validation, persistence/reset protection, filters, analytics and error responses.
 The optional real Chrome check verifies mode banner, all four scenarios, real
 charts/KPIs, evidence, capture ingestion, mobile/Lucide rendering, polling and
-reset preserving actual capture rows. Chrome/Chromium and loopback/subprocess
-permission are needed; set `NIDS_CHROME_BINARY` if not found. `websocket-client`
-is already included through the notebook dependencies. No benchmark model is
-claimed verified; full-mode wiring is tested with explicitly test-owned fixtures.
+reset preserving actual capture rows. This browser test explicitly exercises
+the rules-only fallback; selected-model loading is verified separately.
+Chrome/Chromium and loopback/subprocess permission are needed; set
+`NIDS_CHROME_BINARY` if not found. `websocket-client`
+is already included through the notebook dependencies. Unit tests use test-owned
+fixtures for isolated behavior; separate selected-artifact runtime verification
+is recorded below.
 
-Presentation: start → show DEMO MODE → benign/no attack → port scan/180 → open
+Presentation: start → check `/api/health` and explain the active mode → benign/no
+attack → port scan/180 → open
 rule evidence → charts update → brute force/DoS → process real Nmap capture →
 inspect packet counters → clear demo rows while retaining capture alert → explain
-missing ML export and external auth/feature validation boundaries → Ctrl+C.
+that model runtime readiness is not an accuracy claim, and explain the holdout,
+live-monitoring and deployment limits → Ctrl+C.
 
 ## 9. Troubleshooting
 
@@ -271,7 +275,7 @@ missing ML export and external auth/feature validation boundaries → Ctrl+C.
 Exact external ownership: [FINAL_BLOCKERS.md](docs/FINAL_BLOCKERS.md).
 This is a local educational prototype, not an authenticated production SOC.
 
-### Latest executed validation (2026-10-24)
+### Historical validation snapshot (2026-10-24)
 
 `python -m unittest discover -s tests -v`: **24 passed, 0 failed, 0 skipped**,
 `Ran 24 tests in 4.861s`, `OK`. Real Chrome and CLI end-to-end checks passed,
@@ -279,3 +283,19 @@ including DEMO MODE, four scenarios, actual Nmap capture analysis and reset
 preserving offline observations. Full benchmark artifacts remain an external
 handoff; no real benchmark-model success is claimed. Existing user data was
 preserved; all operational verification used temporary databases.
+
+### Latest validation (2026-11-05)
+
+- `.venv/bin/python -m unittest discover -s tests -v` → **25 passed**.
+- `.venv/bin/python -m compileall -q src rules tests`, `node --check
+  dashboard/app.js`, and `git diff --check` → **PASS**.
+- Chrome browser smoke → **PASS** for demo flows, charts, alert details, filters,
+  offline capture processing, reset, desktop and mobile. This test mocks
+  selected-model loading unavailable to exercise rules-only fallback.
+- Separate selected-artifact smoke → `/api/health` reported
+  `FULL_MODEL_MODE`; a sample `/api/process` request returned HTTP 200.
+
+The selected model's runtime wiring is verified, but benchmark accuracy remains
+unverified without a labelled holdout. See the
+[developer handoff](docs/DEVELOPER_HANDOFF.md) for reviewer guidance and
+remaining work.

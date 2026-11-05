@@ -10,3 +10,4 @@
 
 - [Final blockers](FINAL_BLOCKERS.md) — current operating mode and code/external ownership.
 - [Missing artifact handoff](MISSING_ARTIFACTS.md) — verified inventory and exact selected-model export.
+- [Developer handoff and review guide](DEVELOPER_HANDOFF.md) — current behavior, review path, validation, and prioritized remaining work.

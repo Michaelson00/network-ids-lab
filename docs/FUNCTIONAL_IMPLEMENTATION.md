@@ -97,10 +97,11 @@ accuracy, calibrated attack likelihood or measured detection performance.
 ## Remaining boundaries
 
 The **demo** model loads and the full simulated feature-to-dashboard path works.
-The team's **selected benchmark model/scaler remain absent** and their load/
-real-data acceptance check is still BLOCKED. No live monitoring or PCAP exporter
-is implemented. The separately added historical test report mentions a converter
-that is not in this checkout; those claims are explicitly qualified, not recreated.
+The selected benchmark model/scaler are now checked in; runtime loading and a
+sample prediction pass. No labelled holdout is present for independent accuracy
+validation. No live monitoring or PCAP exporter is implemented. The separately
+added historical test report mentions a converter that is not in this checkout;
+those claims are explicitly qualified, not recreated.
 Existing capture payload privacy, VM isolation and benchmark experimental quality
 remain separate owner checks. This remains a local educational prototype.
 

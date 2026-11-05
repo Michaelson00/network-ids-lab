@@ -1,10 +1,10 @@
 # Final issue audit — SentinelNIDS / network-ids-lab
 
-Update 2026-10-24: [functional implementation](FUNCTIONAL_IMPLEMENTATION.md) adds
-an explicitly synthetic demo model/input path and a verified interactive dashboard.
-The dated audit/report below remains historical evidence; the selected benchmark
-artifacts and experimental data are still missing. Demo validation does not
-resolve selected-model evaluation or packet-to-flow handoffs.
+Update 2026-11-05: this audit is a historical snapshot of the 2026-10-24
+inspection. The selected model/scaler were added afterward and their runtime is
+now verified; benchmark accuracy and packet-to-flow handoffs remain unverified.
+See the current [blocker status](FINAL_BLOCKERS.md) and
+[runbook](../RUN_AND_TEST.md).
 
 Audit date: 2026-10-17. Scope: the supplied Weeks 1–4 checklist, current working
 tree (including prior authorized integration fixes), and local validation.

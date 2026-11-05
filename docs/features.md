@@ -65,8 +65,8 @@ These figures are recorded in `docs/da1-results/week2_results_summary.csv` and `
 * Multiclass classification requires preserving the original attack-category labels.
 * Binary classification requires a clearly documented mapping from the original labels to benign and attack classes.
 * Training and inference must use consistent feature names, order, data types, and cleaning steps.
-* The selected multiclass notebook trains on StandardScaler output. Inference uses the paired scaler; artifact loading still requires the missing model/scaler files.
-* The saved model and scaler files were not present in `src/models/` during the repository inspection, so the inference setup remains to be verified.
+* The selected multiclass notebook trains on StandardScaler output. Inference uses the paired scaler; both model artifacts are checked in and runtime loading is verified.
+* The raw benchmark dataset and a labelled holdout are not present, so retraining and independent accuracy validation remain outstanding.
 
 ## 7. Reproducibility
 

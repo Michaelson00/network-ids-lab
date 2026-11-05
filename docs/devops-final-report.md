@@ -11,9 +11,10 @@ Alert rendering uses text nodes. The local server binds to loopback without debu
 
 Tests exercise the loader/scaler/classifier using temporary fitted fixtures,
 all four categories, rule-only overrides, validation, storage, migration and
-API/dashboard routing. This is not evidence of selected-model accuracy or raw
-packet replay: model/scaler artifacts and capture-to-feature adapters are absent.
-No immutable audit log or production SOC capability is claimed.
+API/dashboard routing. The selected model/scaler are now included and runtime
+inference is verified, but this is not evidence of benchmark accuracy or raw
+packet replay: capture-to-feature adapters are absent. No immutable audit log
+or production SOC capability is claimed.
 
 See [RUN_AND_TEST.md](../RUN_AND_TEST.md) for exact commands and remaining
 model-owner requirements. The existing historical evaluation reports are retained.

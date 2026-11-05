@@ -39,6 +39,9 @@ These are the results recorded in `docs/da1-results/week2_results_summary.csv` a
 
 The notebook documents the cleaning process and saves the cleaned dataset to `data/processed/cicids2017_clean.csv`. The analysis results are stored in `docs/da1-results/`.
 
-The selected multiclass notebook requires StandardScaler at inference. The API now applies it, but the model and scaler artifacts are absent from this checkout; selected-model predictions remain unverified.
+The selected multiclass notebook requires StandardScaler at inference. The paired
+model and scaler are now checked in and runtime prediction is verified. The raw
+benchmark dataset remains absent, so retraining and independent accuracy
+validation are not reproducible from this checkout.
 
 Future reporting should distinguish the full cleaned dataset from any smaller subset used in a separate experiment and should record the sample size, target definition, preprocessing steps, and evaluation setup for each experiment.

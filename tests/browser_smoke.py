@@ -17,6 +17,7 @@ import websocket
 from werkzeug.serving import make_server
 from src.api.app import create_app
 from src.models.demo import load_demo_artifacts
+from src.models.predict import ModelUnavailable
 
 
 class Browser:
@@ -70,7 +71,10 @@ def main():
     if not chrome:parser.exit(1,'Chrome/Chromium missing. Set NIDS_CHROME_BINARY.\n')
     with tempfile.TemporaryDirectory() as directory:
         root=Path(directory)
-        with patch.dict(os.environ,{'NIDS_DEMO_MODEL_DIR':str(root/'model')}):
+        with patch.dict(os.environ,{'NIDS_DEMO_MODEL_DIR':str(root/'model')}), patch(
+            'src.api.app.load_artifacts',
+            side_effect=ModelUnavailable('Selected model disabled for rules-only UI smoke test'),
+        ):
             load_demo_artifacts.cache_clear()
             server=make_server('127.0.0.1',0,create_app(root/'alerts.db'))
             thread=Thread(target=server.serve_forever,daemon=True);thread.start()
@@ -90,26 +94,28 @@ def main():
                 browser.call('Emulation.setDeviceMetricsOverride',{'width':1440,'height':1000,'deviceScaleFactor':1,'mobile':False})
                 base=f'http://127.0.0.1:{server.server_port}'
                 browser.call('Page.navigate',{'url':base})
-                browser.until("document.getElementById('kpi-total')?.textContent === '0' && !!window.Chart")
+                browser.until("document.getElementById('kpi-total')?.textContent === '0' && !!window.Chart && document.getElementById('status-api').textContent === 'Online'")
                 assert browser.js("!document.getElementById('empty-state').hidden")
                 assert browser.js("document.getElementById('status-api').textContent === 'Online'")
                 browser.js("document.querySelector('[data-scenario=benign]').click()")
-                browser.until("document.getElementById('demo-result').textContent.includes('Benign verdict') && !document.querySelector('[data-scenario=benign]').disabled")
+                browser.until("document.getElementById('demo-result').textContent.includes('Normal traffic · no alert was created') && !document.querySelector('[data-scenario=benign]').disabled")
                 assert browser.js("document.getElementById('kpi-total').textContent === '0'")
                 for index,name in enumerate(['port_scan','brute_force','dos'],1):
                     browser.js(f"document.querySelector('[data-scenario={name}]').click()")
                     browser.until(f"document.getElementById('kpi-total').textContent === '{index}' && !document.querySelector('[data-scenario={name}]').disabled")
                 assert browser.js("document.getElementById('kpi-high').textContent === '1' && document.getElementById('kpi-medium').textContent === '2'")
                 assert browser.js("document.querySelectorAll('#alerts-body tr').length === 3")
+                browser.js("document.getElementById('analytics-details').open=true")
                 assert browser.js("Chart.getChart('category-chart').data.datasets[0].data.reduce((a,b)=>a+b,0) === 3")
                 assert browser.js("Chart.getChart('timeline-chart').data.datasets[0].data.reduce((a,b)=>a+b,0) === 3")
-                assert browser.js("document.getElementById('status-mode').textContent === 'DEMO MODE' && document.getElementById('mode-title').textContent === 'DEMO MODE'")
-                assert browser.js("document.querySelectorAll('svg use[href*=lucide]').length >= 15")
+                assert browser.js("document.getElementById('status-mode').textContent === 'DEMO MODE' && document.getElementById('mode-title').textContent === 'Rules-only demo mode'")
+                assert browser.js("document.querySelectorAll('svg use[href*=lucide]').length >= 8")
                 assert browser.js("document.querySelector('.brand-icon svg').getBBox().width > 0"), 'Lucide geometry did not render'
                 browser.js("document.querySelector('#alerts-body button').click()")
                 browser.until("document.getElementById('detail-content').textContent.includes('Risk:')")
-                assert browser.js("document.getElementById('alert-dialog').open && document.getElementById('detail-content').textContent.includes('DEMO / SIMULATED')")
+                assert browser.js("document.getElementById('alert-dialog').open && document.getElementById('detail-content').textContent.includes('DEMO EXAMPLE')")
                 browser.js("document.getElementById('close-dialog').click()")
+                browser.js("document.getElementById('filter-details').open=true")
                 browser.js("document.getElementById('filter-severity').value='High';document.getElementById('filter-severity').dispatchEvent(new Event('change'))")
                 browser.until("document.querySelectorAll('#alerts-body tr').length === 1")
                 browser.js("document.getElementById('filter-severity').value='';document.getElementById('filter-severity').dispatchEvent(new Event('change'))")
@@ -125,10 +131,10 @@ def main():
                 browser.until("document.getElementById('kpi-total').textContent === '4'")
                 browser.js("document.getElementById('capture-file').value='scan_nmap_synscan.pcapng';document.getElementById('process-capture').click()")
                 browser.until("document.getElementById('kpi-total').textContent === '5' && document.getElementById('capture-result').textContent.includes('2017 packets')")
-                assert browser.js("document.getElementById('alerts-body').textContent.includes('OFFLINE CAPTURE / RULES')")
+                assert browser.js("document.getElementById('alerts-body').textContent.includes('Saved capture · rules only')")
                 browser.js("window.confirm=()=>true;document.getElementById('reset-demo').click()")
                 browser.until("document.getElementById('kpi-total').textContent === '1' && document.getElementById('demo-result').textContent.includes('Cleared 4')")
-                assert browser.js("document.getElementById('alerts-body').textContent.includes('OFFLINE CAPTURE / RULES')")
+                assert browser.js("document.getElementById('alerts-body').textContent.includes('Saved capture · rules only')")
                 # Exercise honest stale/offline state and recovery.
                 server.shutdown();thread.join(timeout=5);server.server_close()
                 browser.js('refreshDashboard()')
