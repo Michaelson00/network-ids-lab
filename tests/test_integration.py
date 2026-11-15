@@ -62,7 +62,7 @@ class IntegrationTests(unittest.TestCase):
         page = self.client.get('/')
         self.addCleanup(page.close)
         self.assertEqual(page.status_code, 200)
-        self.assertIn(b"const API_URL = '/api'", page.data)
+        self.assertIn(b'const API_URL = "/api"', page.data)
         self.assertNotIn(b'tbody.innerHTML +=', page.data)
 
     def test_rule_only_and_ml_only(self):
