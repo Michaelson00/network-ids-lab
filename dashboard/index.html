@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>SentinelNIDS · Security overview</title>
+    <link
+      rel="icon"
+      href="/assets/vendor/shield-check.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+    <script>
+      const API_URL = "/api";
+    </script>
+    <script defer src="/assets/vendor/chart.umd.min.js"></script>
+    <script defer src="/assets/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to dashboard</a>
+    <main id="main">
+      <header class="topbar">
+        <a class="brand" href="#overview"
+          ><span class="brand-icon"
+            ><svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use
+                href="/assets/vendor/lucide.svg#shield-check"
+              ></use></svg></span
+          ><span
+            >Sentinel<span class="brand-light">NIDS</span
+            ><small>NETWORK IDS LAB</small></span
+          ></a
+        >
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="#simulation">Try a demo</a><a href="#alerts">My results</a
+          ><a href="#more-options">More options</a>
+        </nav>
+        <div class="topbar-actions">
+          <span class="local-label"
+            ><span class="dot"></span>Local only · no live monitoring</span
+          ><span id="updated">Connecting…</span
+          ><button
+            id="refresh"
+            class="icon-button"
+            title="Refresh dashboard"
+            aria-label="Refresh dashboard"
+          >
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#refresh-cw"></use>
+            </svg>
+          </button>
+        </div>
+      </header>
+      <section id="overview" class="welcome">
+        <p class="eyebrow">WELCOME TO SENTINELNIDS</p>
+        <h1>See how network alerts are made.</h1>
+        <p class="welcome-copy">
+          Choose a safe example to see the detector in action. Nothing here
+          watches your network or sends traffic.
+        </p>
+        <div id="operating-mode" class="notice mode-notice" role="status">
+          <strong id="mode-title">Checking system</strong>
+          <p id="mode-message">Connecting to the local detector…</p>
+        </div>
+        <div id="api-error" class="notice error" role="alert" hidden></div>
+      </section>
+      <section id="simulation" class="panel demo-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">STEP 1 · CHOOSE AN EXAMPLE</p>
+            <h2>Try a safe demo</h2>
+            <p>
+              Each button submits a simulated example and shows what the system
+              finds.
+            </p>
+          </div>
+          <span class="tag demo-tag">SIMULATED ONLY</span>
+        </div>
+        <div class="scenario-buttons">
+          <button class="scenario" data-scenario="benign">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#shield-check"></use></svg
+            ><span
+              ><strong>Normal traffic</strong
+              ><small>A safe baseline example</small></span
+            ><svg class="icon arrow" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#chevron-right"></use>
+            </svg>
+          </button>
+          <button class="scenario" data-scenario="port_scan">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#scan-line"></use></svg
+            ><span
+              ><strong>Port scan</strong
+              ><small>Many ports checked quickly</small></span
+            ><svg class="icon arrow" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#chevron-right"></use>
+            </svg>
+          </button>
+          <button class="scenario" data-scenario="brute_force">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#key-round"></use></svg
+            ><span
+              ><strong>Login guessing</strong
+              ><small>Repeated failed logins</small></span
+            ><svg class="icon arrow" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#chevron-right"></use>
+            </svg>
+          </button>
+          <button class="scenario" data-scenario="dos">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#zap"></use></svg
+            ><span
+              ><strong>Traffic flood</strong
+              ><small>Many requests in a short time</small></span
+            ><svg class="icon arrow" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#chevron-right"></use>
+            </svg>
+          </button>
+        </div>
+        <div
+          id="demo-result"
+          class="demo-result"
+          role="status"
+          aria-live="polite"
+        >
+          Start with Normal traffic. The other examples show how suspicious
+          activity becomes an alert.
+        </div>
+        <details class="help-details">
+          <summary>What happens when I choose an example?</summary>
+          <p>
+            The system checks the sample with its model and security rules,
+            gives it a risk score, then saves any alert so you can review it
+            below. Examples are simulated—not real traffic.
+          </p>
+        </details>
+      </section>
+      <section id="alerts" class="panel alerts-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">STEP 2 · REVIEW</p>
+            <h2>
+              Your results <span id="shown-count" class="count-tag">—</span>
+            </h2>
+            <p>
+              Alerts found in examples or submitted data. Normal results do not
+              create alerts.
+            </p>
+          </div>
+          <label class="scope-label"
+            >Show results<select id="scope">
+              <option value="all">Everything</option>
+              <option value="demo">Demo examples</option>
+              <option value="observed">Submitted data</option>
+            </select></label
+          >
+        </div>
+        <div class="kpis" aria-label="Alert summary">
+          <article class="kpi">
+            <span class="kpi-label">Alerts saved</span
+            ><strong id="kpi-total">—</strong
+            ><small id="kpi-scope">Loading saved records</small>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">High attention</span
+            ><strong id="kpi-high">—</strong><small>Risk score 501–1,000</small>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Medium attention</span
+            ><strong id="kpi-medium">—</strong><small>Risk score 126–500</small>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Low attention</span
+            ><strong id="kpi-low">—</strong><small>Risk score 1–125</small>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">Needs review</span
+            ><strong id="kpi-active">—</strong
+            ><small>Saved alerts not yet triaged</small>
+          </article>
+        </div>
+        <details id="analytics-details" class="advanced-details">
+          <summary>Show charts and trends</summary>
+          <div class="analytics">
+            <article class="panel timeline-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Alert activity</h2>
+                  <p>Saved alerts by hour · last 24 hours</p>
+                </div>
+              </div>
+              <div class="chart">
+                <canvas
+                  id="timeline-chart"
+                  role="img"
+                  aria-label="Hourly stored alert count and average risk"
+                ></canvas>
+                <p id="timeline-empty" class="chart-empty">
+                  No alerts in the last 24 hours.
+                </p>
+              </div>
+              <p id="timeline-summary" class="sr-only"></p>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div><h2>Attention levels</h2></div>
+              </div>
+              <div class="chart">
+                <canvas
+                  id="severity-chart"
+                  role="img"
+                  aria-label="Alert counts by severity"
+                ></canvas>
+                <p id="severity-empty" class="chart-empty">
+                  No alert data yet.
+                </p>
+              </div>
+              <p id="severity-summary" class="chart-summary"></p>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div><h2>Alert types</h2></div>
+              </div>
+              <div class="chart compact">
+                <canvas
+                  id="category-chart"
+                  role="img"
+                  aria-label="Stored alerts by normalized attack category"
+                ></canvas>
+                <p id="category-empty" class="chart-empty">
+                  Run a demo to see alert types.
+                </p>
+              </div>
+              <p id="category-summary" class="sr-only"></p>
+            </article>
+            <article class="panel">
+              <div class="panel-heading">
+                <div><h2>How alerts were found</h2></div>
+              </div>
+              <div class="chart compact">
+                <canvas
+                  id="source-chart"
+                  role="img"
+                  aria-label="Stored alerts identified by model, rule, or both"
+                ></canvas>
+                <p id="source-empty" class="chart-empty">
+                  No detection evidence yet.
+                </p>
+              </div>
+              <p id="source-summary" class="chart-summary"></p>
+            </article>
+          </div>
+        </details>
+        <details id="filter-details" class="advanced-details">
+          <summary>Filter my results</summary>
+          <div class="filters">
+            <label
+              >Attention<select id="filter-severity">
+                <option value="">All levels</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select></label
+            ><label
+              >Alert type<select id="filter-category">
+                <option value="">All types</option>
+                <option value="PORT_SCAN">Port scan</option>
+                <option value="BRUTE_FORCE">Login guessing</option>
+                <option value="DOS">Traffic flood</option>
+                <option value="OTHER_ATTACK">Other activity</option>
+              </select></label
+            ><label
+              >Found by<select id="filter-source">
+                <option value="">Any method</option>
+                <option value="ml">Model</option>
+                <option value="rule">Security rule</option>
+                <option value="both">Model + rule</option>
+              </select></label
+            >
+            <p>Filters only change this list.</p>
+          </div>
+        </details>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>What was found</th>
+                <th>Attention</th>
+                <th><span class="sr-only">Details</span>Review</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-body">
+              <tr>
+                <td colspan="4" class="empty-state">
+                  Connecting to the local detector…
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="empty-state" class="empty-state" hidden>
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <use href="/assets/vendor/lucide.svg#radar"></use>
+          </svg>
+          <h3 id="empty-title">No alerts yet</h3>
+          <p id="empty-copy">
+            Try one of the safe examples above. The dashboard does not monitor
+            your network automatically.
+          </p>
+          <a class="button" href="#simulation"
+            >Try a demo<svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#play"></use></svg
+          ></a>
+        </div>
+        <div class="alert-actions">
+          <button id="reset-demo" class="button subtle">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#rotate-ccw"></use></svg
+            >Clear demo examples</button
+          ><span
+            >Only simulated demo alerts are deleted. Submitted and imported
+            records stay safe.</span
+          >
+        </div>
+      </section>
+      <details
+        id="capture-options"
+        class="panel advanced-details capture-panel"
+      >
+        <summary>Optional: analyze a saved lab capture</summary>
+        <p class="section-help">
+          Reads a PCAP/PCAPNG file already included with this project. This is
+          offline only; it does not capture or send network traffic.
+        </p>
+        <p class="demo-explanation">
+          This checks packet headers for simple rules. It does not create the
+          model's flow features or identify encrypted login attempts.
+        </p>
+        <div class="capture-controls">
+          <label
+            >Choose a lab file<select
+              id="capture-file"
+              aria-label="Lab capture"
+            >
+              <option value="">Loading captures…</option>
+            </select></label
+          ><button id="process-capture" class="button">
+            <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+              <use href="/assets/vendor/lucide.svg#play"></use></svg
+            >Analyze saved file
+          </button>
+        </div>
+        <div
+          id="capture-result"
+          class="demo-result"
+          role="status"
+          aria-live="polite"
+        >
+          Choose a file to analyze its packet headers.
+        </div>
+      </details>
+      <details id="more-options" class="advanced-details more-options">
+        <summary>More about this system</summary>
+        <div id="engine" class="engine-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>System status</h2>
+                <p>Local service and model readiness</p>
+              </div>
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+                <use href="/assets/vendor/lucide.svg#server"></use>
+              </svg>
+            </div>
+            <dl class="status-list">
+              <div>
+                <dt>API</dt>
+                <dd id="status-api">Checking</dd>
+              </div>
+              <div>
+                <dt>Rules</dt>
+                <dd id="status-engine">Checking</dd>
+              </div>
+              <div>
+                <dt>Risk scoring</dt>
+                <dd id="status-risk">Checking</dd>
+              </div>
+              <div>
+                <dt>Mode</dt>
+                <dd id="status-mode">Checking</dd>
+              </div>
+              <div>
+                <dt>Selected model</dt>
+                <dd id="status-model">Checking</dd>
+              </div>
+              <div>
+                <dt>Optional synthetic fixture</dt>
+                <dd id="status-demo">Checking</dd>
+              </div>
+              <div>
+                <dt>Saved data</dt>
+                <dd id="status-database">Checking</dd>
+              </div>
+            </dl>
+            <p id="model-note" class="muted small"></p>
+          </article>
+          <article class="panel transparency">
+            <div class="panel-heading">
+              <div><h2>How risk is scored</h2></div>
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+                <use href="/assets/vendor/lucide.svg#info"></use>
+              </svg>
+            </div>
+            <p class="formula">
+              Likelihood <span>×</span> Impact <span>×</span> Exposure
+            </p>
+            <p>
+              Each factor ranges from 1–10. A matching rule raises likelihood to
+              at least 9.
+            </p>
+            <div class="risk-bands">
+              <span>Low <strong>1–125</strong></span
+              ><span>Medium <strong>126–500</strong></span
+              ><span>High <strong>501–1,000</strong></span>
+            </div>
+            <p class="small muted">
+              Model confidence is not the chance that an attack occurred. A
+              rule-only result has no model confidence.
+            </p>
+          </article>
+        </div>
+      </details>
+      <footer>
+        <span>SentinelNIDS · Educational project</span
+        ><span>Local only · No live network monitoring</span>
+      </footer>
+    </main>
+    <dialog id="alert-dialog" aria-labelledby="detail-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">DETECTION EVIDENCE</p>
+          <h2 id="detail-title">Alert details</h2>
+        </div>
+        <button
+          id="close-dialog"
+          class="icon-button"
+          aria-label="Close alert details"
+        >
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true">
+            <use href="/assets/vendor/lucide.svg#x"></use>
+          </svg>
+        </button>
+      </div>
+      <div id="detail-content"></div>
+    </dialog>
+  </body>
+</html>
